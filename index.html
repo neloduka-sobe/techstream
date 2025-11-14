@@ -1,60 +1,92 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-
-	<meta charset="utf-8">
-	<meta name="description" content="">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Techstream &amp; Visualization</title>
-
-	<!-- Load CSS libraries -->
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-	<link rel="stylesheet" href="css/style.css">
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TechStream — Air Travel Story (Horizontal)</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <script src="https://d3js.org/d3.v7.min.js" defer></script>
+  <script src="js/vis-globe-links.js" defer></script>
+  <script src="js/vis-timeline-map.js" defer></script>
+  <script src="js/vis-podium-aircraft.js" defer></script>
+  <script src="js/vis-plane-view.js" defer></script>
+  <script src="js/vis-calendar.js" defer></script>
+  <script src="js/main.js" defer></script>
+  <style>
+    /* Override plane style to use Unicode symbol */
+    .plane {
+      font-size: 3rem;              /* scale size */
+      color: #000000;                 /* dark navy color */
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      transform: translate(-50%, -77.5%) rotate(0deg);
+      transition: transform 350ms ease-out;
+      transition: left 350ms ease-out;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+      line-height: 1;
+      user-select: none;
+    }
+  </style>
 </head>
 <body>
+  <!-- Horizontal scroll snap container -->
+  <div id="scroller" class="hsnap">
+    <section class="panel hero hsnap-child" id="hero">
+      <div class="wrap vcenter">
+        <h1>TechStream</h1>
+        <p class="lede">
+          Understanding the story of air travel — from global connections to personal perspectives.
+        </p>
+        <p class="muted">Scroll →</p>
+      </div>
+    </section>
 
-	<div class="container">
+    <section class="panel hsnap-child" id="v1">
+      <div class="wrap two-col">
+        <header class="side"><h2>Global Connections</h2></header>
+        <div id="vis-globe-links" class="vis-canvas"></div>
+      </div>
+    </section>
 
-		<h1>Techstream</h1>
-		
-		<!-- Navigation button to globe visualization -->
+    <section class="panel hsnap-child" id="v5">
+      <div class="wrap two-col">
+        <header class="side"><h2>Daily Rhythm</h2></header>
+        <div id="vis-calendar" class="vis-canvas"></div>
+      </div>
+    </section>
+    
+    <section class="panel hsnap-child" id="v2">
+      <div class="wrap two-col">
+        <header class="side"><h2>Routes Through Time</h2></header>
+        <div id="vis-timeline-map" class="vis-canvas"></div>
+      </div>
+    </section>
 
-		<div class="mb-4 text-center">
-			<a href="globe/index.html" class="btn btn-primary btn-lg">
-				Click To View Airports Visualized Through The Globe
-			</a>
-		</div>
-		
-		<!-- Parent container for the chart -->
+    <section class="panel hsnap-child" id="v3">
+      <div class="wrap two-col">
+        <header class="side"><h2>Fleet Podium</h2></header>
+        <div id="vis-podium-aircraft" class="vis-canvas"></div>
+      </div>
+    </section>
 
-		<div id="visualization-1"></div>
+    <section class="panel hsnap-child" id="v4">
+      <div class="wrap two-col">
+        <header class="side"><h2>Inside the Plane</h2></header>
+        <div id="vis-plane-view" class="vis-canvas"></div>
+      </div>
+    </section>
 
-        <div id="visualization-2"></div>
+  </div>
 
-
-		<p>Data sourced from opensky-network.org</p>
-
-	</div>
-
-
-	<!-- Load JS libraries: jQuery, bootstrap, D3 -->
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
-	<!-- d3 -->
-	<script src="https://d3js.org/d3.v7.min.js"></script>
-
-	<!-- own js files -->
-
-	<!-- Visualization 1: Calendar Bubble -->
-	<script src="js/visualization1/main.js"></script>
-	<script src="js/visualization1/calendar-bubble.js"></script>
-	
-	<!-- Visualization 2: Calendar Line Chart -->
-	<script src="js/visualization2/main.js"></script>
-	<script src="js/visualization2/calendar.js"></script>
-
-	<script src="js/main.js"></script>
-
+  <!-- Bottom progress line with Unicode airplane indicator -->
+  <footer id="timeline" role="navigation" aria-label="Page progress">
+    <div class="timeline-wrap">
+      <div class="track" aria-hidden="true"></div>
+      <div class="ticks" id="ticks"></div>
+      <div class="plane" id="plane" aria-hidden="true" title="Progress">✈</div>
+      <div class="labels" id="labels" aria-hidden="true"></div>
+    </div>
+  </footer>
 </body>
 </html>
