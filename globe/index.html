@@ -38,19 +38,20 @@
 
   #timeline {
     position: absolute;
-    top: 530px;
+    top: 600px;
     left: 50%;
     transform: translateX(-50%);
   }
   #multiviewButton {
     position: absolute;
-    top: 600px;
+    top: 780px;
     left: 50%;
     transform: translateX(-50%);
     font-family: sans-serif;
     font-size: 13px;
     padding: 4px 6px;
     cursor: pointer;
+    display: none;
   }
   #dateDropdown {
     position: absolute;
@@ -69,12 +70,32 @@
     padding: 4px 6px;
   }
   #prefixDropdown {
-    top: 660px;
-    transform: translateX(-110%);
+    top: 680px;
+    transform: translateX(-100%);
   }
   #countryDropdown {
-    top: 660px;
-    transform: translateX(10%);
+    top: 680px;
+    transform: translateX(0%);
+  }
+
+  .filter-label {
+    position: absolute;
+    font-family: sans-serif;
+    font-size: 12px;
+    color: #555;
+    top: 658px; /* Position above the dropdowns */
+  }
+
+  #prefixLabel {
+    left: 50%;
+    transform: translateX(-100%);
+    padding-left: 4px; /* Align with dropdown padding */
+  }
+
+  #countryLabel {
+    left: 50%;
+    transform: translateX(0%);
+    padding-left: 4px; /* Align with dropdown padding */
   }
 
   #autorotateButton, #playPauseButton {
@@ -87,6 +108,7 @@
     padding: 4px 6px;
     cursor: pointer;
     margin-top: 0px;
+    display: none;
   }
 
   #playPauseButton {
@@ -98,10 +120,10 @@
     position: relative;
   }
   #xxx {
-    top: 200px;
+    top: 800px;
   }
   #yyy {
-    top: 220px;
+    top: 820px;
   }
 
   .flightPath {
@@ -160,9 +182,9 @@
 <button id="jumpToSouthAmerica">South America</button>
 <button id="jumpToAustralia">Australia</button>
 
+<div id="infoBox">Click a plane or airport to see details</div>
 <div id="single-view-container">
   <div id="map"></div>
-  <div id="infoBox">Click a plane or airport to see details</div>
 </div>
 
 <div id="multi-view-container" style="display: none;">
@@ -175,10 +197,12 @@
   <svg id="sliderSvg" width="960" height="60"></svg>
 </div>
 
+<label for="prefixDropdown" id="prefixLabel" class="filter-label">Airline</label>
 <select id="prefixDropdown">
   <option value="">Select airline prefix</option>
 </select>
 
+<label for="countryDropdown" id="countryLabel" class="filter-label">Country</label>
 <select id="countryDropdown">
   <option value="">Select country</option>
 </select>
@@ -186,7 +210,7 @@
 
 <button id="autorotateButton">Turn Autorotate On</button>
 <button id="playPauseButton">Play Timeline</button>
-<div id="globeCoordinatesLabel" style="position: absolute; top: 730px; left: 50%; transform: translateX(-50%); font-family: sans-serif; font-size: 13px; padding: 4px 6px;"></div>
+<div id="globeCoordinatesLabel" style="position: absolute; top: 840px; left: 50%; transform: translateX(-50%); font-family: sans-serif; font-size: 13px; padding: 4px 6px; display: none;"></div>
 <div id="xxx"></div>
 <div id="yyy"></div>
 
@@ -214,9 +238,8 @@
 
   // New story screens for the extended part
   const extendedStoryScreens = [
-    { text: "Now, let's focus on Canada. Observe how air traffic patterns shift in this region.", duration: 5000 },
-    { text: "The next chart illustrates the daily flight activity for Canadian airlines across the three periods.", duration: 5000, chart: "canadaFlightsLineChart" }, // Mark this screen for the chart
-    { text: "This concludes our brief story. Feel free to explore the data further!", duration: 5000 }
+    { text: "Now, let's focus on Freight.", duration: 3000 },
+    { text: "Here are flights flown by Fedex", duration: 3000}, // Mark this screen for the chart
   ];
   let currentExtendedStoryScreen = 0;
   let canadaFlightsDailyData = null; // To store the calculated data
@@ -231,20 +254,38 @@
       const screen = storyScreens[currentStoryScreen];
       d3.select("#storyText").text(screen.text);
       let countdown = screen.duration / 1000;
-      d3.select("#storyCounter").text(`Continuing in ${countdown} seconds...`);
+      d3.select("#storyCounter").text(`Loading... Continuing soon...`);
 
-      storyInterval = setInterval(() => {
-        countdown--;
-        d3.select("#storyCounter").text(`Continuing in ${countdown} seconds...`);
-        if (countdown <= 0) {
-          clearInterval(storyInterval);
-          currentStoryScreen++;
-          displayNextStoryScreen();
+      // check if csvs are loaded every second before moving on
+      let checkInterval = setInterval(() => {
+        if (allDatasets['jan'] && allDatasets['apr'] && allDatasets['dec']) {
+          clearInterval(checkInterval);
+          d3.select("#storyCounter").text(`Continuing in ${countdown} seconds...`);
+
+          storyInterval = setInterval(() => {
+            countdown--;
+            d3.select("#storyCounter").text(`Continuing in ${countdown} seconds...`);
+            if (countdown <= 0) {
+              clearInterval(storyInterval);
+              currentStoryScreen++;
+              displayNextStoryScreen();
+            }
+          }, 1000);
         }
-      }, 1000);
+      }, 500);
+
+      // storyInterval = setInterval(() => {
+      //   countdown--;
+      //   d3.select("#storyCounter").text(`Continuing soon...`);
+      //   if (countdown <= 0) {
+      //     clearInterval(storyInterval);
+      //     currentStoryScreen++;
+      //     displayNextStoryScreen();
+      //   }
+      // }, 3000);
     } else {
       // Story finished, keep overlay visible for the button
-      // d3.select("#storyOverlay").style("display", "none"); // Commented out
+      d3.select("#storyOverlay").style("display", "none"); // Commented out
 
       // --- Post-story automation ---
       // 1. Rotate the globe to Canada
@@ -254,25 +295,52 @@
       countryDropdown.property("value", "CANADA");
       countryDropdown.dispatch("change"); // Trigger the change event
 
+      multiviewBtn.dispatch("click"); // Enter multiview mode
       // 3. Start playing the timeline
       playPauseBtn.dispatch("click"); // Simulate a click on the play/pause button
 
-      // New: Wait 10 seconds and show "Continue Story" button
+      // Wait until timeline is at 11:00pm
+      const waitForTimelineAt2300 = setInterval(() => {
+        const minutes = Math.round(xScale.invert(handle.attr("cx")));
+        if (minutes >= 1380) { // 11:00 PM is 1380 minutes
+          clearInterval(waitForTimelineAt2300);
+          playPauseBtn.dispatch("click"); // Pause the timeline
 
-      d3.select("#storyText").text("Exploring Canadian air traffic...");
-      d3.select("#storyCounter").text("Please wait 10 seconds for the next part of the story.");
+          // Show continue story button
+          // Add CSS for pulsing animation
+          d3.select("head")
+            .append("style")
+            .html(`
+              @keyframes pulse {
+                0%   { transform: translateX(-50%) scale(1); }
+                50%  { transform: translateX(-50%) scale(1.1); }
+                100% { transform: translateX(-50%) scale(1); }
+              }
+              #continueStoryButton {
+                animation: pulse 1.5s infinite ease-in-out;
+              }
+            `);
 
-      setTimeout(() => {
-        d3.select("#storyCounter").text(""); // Clear countdown
-        const continueButton = d3.select("#storyOverlay").append("button")
-          .attr("id", "continueStoryButton")
-          .style("padding", "10px 20px")
-          .style("font-size", "20px")
-          .style("margin-top", "30px")
-          .text("Continue Story");
+            d3.select("body").append("button")
+              .attr("id", "continueStoryButton")
+              .style("position", "absolute")
+              .style("top", "830px")
+              .style("left", "50%")
+              .style("transform", "translateX(-50%)")
+              .style("padding", "10px 20px")
+              .style("font-size", "16px")
+              .style("cursor", "pointer")
+              .text("Continue Story");
 
-        continueButton.on("click", handleContinueStory);
-      }, 10000); // 10 seconds delay
+
+          //d3.select("#continueStoryButton").style("display", "inline-block");
+          // Attach event listener
+          d3.select("#continueStoryButton").on("click", handleContinueStory);
+        }
+      }, 500); // Check every half second
+
+      
+
     }
   }
 
@@ -468,9 +536,9 @@
           d3.select("#storyText").text(screen.text);
           d3.select("#canadaFlightsChart").remove(); // Remove previous chart if any
 
-          if (screen.chart === "canadaFlightsLineChart") {
-              drawCanadaFlightsLineChart(canadaFlightsDailyData);
-          }
+          // if (screen.chart === "canadaFlightsLineChart") {
+          //     drawCanadaFlightsLineChart(canadaFlightsDailyData);
+          // }
 
           let countdown = screen.duration / 1000;
           d3.select("#storyCounter").text(`Continuing in ${countdown} seconds...`);
@@ -487,7 +555,26 @@
       } else {
           // All extended story screens finished
           d3.select("#storyOverlay").style("display", "none");
-          d3.select("#canadaFlightsChart").remove(); // Ensure chart is removed
+          prefixDropdown.property("value", "FDX"); // Select Fedex
+          prefixDropdown.dispatch("change"); // Trigger change event
+          // reset timeline to 00:00
+          handle.attr("cx", xScale(0));
+          updateAllGlobes(0);
+          playPauseBtn.dispatch("click"); // Start playing the timeline again
+          // wait until timeline is at 23:00 and then pause timeline again
+          // also pop up a prompt to explore more
+          const waitForTimelineAt2300Again = setInterval(() => {
+            const minutes = Math.round(xScale.invert(handle.attr("cx")));
+            if (minutes >= 1380) { // 11:00 PM is 1380 minutes
+              clearInterval(waitForTimelineAt2300Again);
+              playPauseBtn.dispatch("click"); // Pause the timeline
+
+              alert("Explore more by interacting with the globe and filters!");
+            }
+          }, 500); // Check every half second
+
+  
+          // d3.select("#canadaFlightsChart").remove(); // Ensure chart is removed
       }
   }
 
@@ -765,7 +852,8 @@
       const rowConversion = d => ({
         ...d,
         firstseen: d.firstseen ? new Date(d.firstseen) : null,
-        timestamp: d.timestamp && !isNaN(+d.timestamp) ? +d.timestamp : null
+        timestamp: d.timestamp && !isNaN(+d.timestamp) ? +d.timestamp : null,
+        dest: d.destination ? d.destination.toUpperCase() : null,
       });
 
       const [rawFlights1, rawFlights2] = await Promise.all([
@@ -835,7 +923,7 @@
       .attr("width", 5)
       .attr("height", 5)
       .attr("fill", "blue")
-      .attr("opacity", 0.7)
+      .attr("opacity", 0.3)
       .on("click", (event, d) => { 
         event.stopPropagation(); 
         showAirportInfo(d, datasetKey); 
@@ -1078,8 +1166,11 @@
     const topPrefixes = uiData.topPrefixes;
     const prefixCounts = uiData.prefixCounts;
 
+    // Combine with always-include list and sort
+    const allPrefixes = [...new Set([...alwaysIncludePrefixes, ...topPrefixes])].sort();
+
     // Update options for dropdown (already using update pattern)
-    const options = prefixDropdown.selectAll("option.prefix").data(topPrefixes, d=>d);
+    const options = prefixDropdown.selectAll("option.prefix").data(allPrefixes, d=>d);
     options.enter().append("option").attr("class","prefix").merge(options)
       .attr("value", d=>d)
       .text(d=> faaLookup[d] ? `${faaLookup[d].Company} (${d})` : d)
@@ -1622,6 +1713,7 @@
   });
 
   countryDropdown.on("change", function(){
+    //alert("changed");
     activeCountryHighlight = this.value || null;
     activePrefixHighlight = null;
     activeFlight = null;
@@ -1653,18 +1745,27 @@
         if (nextMinutes > totalMinutes) nextMinutes = 0;
         
         const newX = xScale(nextMinutes);
-        handle.transition().duration(980).ease(d3.easeLinear).attr("cx", newX); // Adjust animation duration
+        handle.transition().duration(48).ease(d3.easeLinear).attr("cx", newX); // Adjust animation duration
 
         const hours = Math.floor(nextMinutes/60);
         const mins = nextMinutes % 60;
+        const countryFilterBefore = activeCountryHighlight;
+        //alert(countryFilterBefore);
         updateAllGlobes(nextMinutes);
+        if (activeCountryHighlight !== countryFilterBefore) {
+          countryDropdown.property("value", activeCountryHighlight || "");
+        }
         d3.select("#timeLabel").text(`Time: ${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")} UTC`);
-      }, 1000); // Increased interval duration
+      }, 50); // Increased interval duration
     } else {
       clearInterval(playTimer);
       handle.transition();
       const minutes = Math.round(xScale.invert(handle.attr("cx")));
+      const countryFilterBefore = activeCountryHighlight;
       updateAllGlobes(minutes);
+      if (activeCountryHighlight !== countryFilterBefore) {
+        countryDropdown.property("value", activeCountryHighlight || "");
+      }
     }
   });
 
@@ -1675,8 +1776,8 @@
     activeFlight = null;
     activeAirport = null;
     activeAircraftHighlight = null;
-    activePrefixHighlight = null;
-    activeCountryHighlight = null;
+    //activePrefixHighlight = null;
+    //activeCountryHighlight = null;
     globeInstances.forEach(g => g.clearSelection());
     infoBox.text("Showing top airlines/countries. Click a plane or airport for details.");
   });
@@ -1688,6 +1789,12 @@
 
     d3.select("#single-view-container").style("display", multiviewMode ? "none" : "block");
     d3.select("#multi-view-container").style("display", multiviewMode ? "flex" : "none");
+
+    // Hide date dropdown in multiview, as each map represents a date
+    d3.select("#dateDropdown").style("display", multiviewMode ? "none" : "block");
+
+    // Hide the infoBox in multiview mode to prevent overlap
+    d3.select("#infoBox").style("display", multiviewMode ? "none" : "block");
 
     // Clear existing globes and re-create them based on multiviewMode
     globeInstances.forEach(g => g.svg.remove()); // Remove all existing SVGs
@@ -1793,6 +1900,28 @@
 
   // Initial Load
   await loadAllDatasets();
+
+  // Calculate Top 40 prefixes from Jan 2nd data
+  const janFlights = allDatasets['jan'].flights;
+  const prefixCountsJan2 = {};
+  janFlights.forEach(f => {
+      const prefix = (f.callsign || "").slice(0, 3).toUpperCase();
+      if (prefix) {
+          prefixCountsJan2[prefix] = (prefixCountsJan2[prefix] || 0) + 1;
+      }
+  });
+
+  const top40prefixes = Object.entries(prefixCountsJan2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 40)
+      .map(d => d[0]);
+
+  // Find Air Canada prefix
+  const airCanadaPrefix = faaData.find(d => d.Company === 'Air Canada')?.['3Ltr']?.toUpperCase() || 'ACA';
+
+  // Define the list of prefixes to always include in the dropdown.
+  const alwaysIncludePrefixes = [...new Set(['FDX', 'UPS', airCanadaPrefix, ...top40prefixes])];
+
   globeInstances.push(createGlobe("#map", currentDatasetKey));
   updateAllGlobes(0);
 })();
