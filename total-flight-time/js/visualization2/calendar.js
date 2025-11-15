@@ -10,6 +10,32 @@ class CalendarMap {
         this.flightsPerDay = {};
         this.calendarPadding = 30;
 
+
+        this.resizeTimeout = null;
+
+        
+        window.addEventListener('resize', () => {
+
+            clearTimeout(this.resizeTimeout);
+
+            this.resizeTimeout = setTimeout(() => {
+
+                this.handleResize();
+
+            }, 250); 
+
+        });
+
+    }
+
+    
+    handleResize() {
+        
+        d3.select("#" + this.parentElement).select("svg").remove();
+        
+        
+        this.initVis();
+
     }
 
 
@@ -102,7 +128,7 @@ class CalendarMap {
             .attr("x", vis.width / 2)
             .attr("y", vis.height + vis.calendarPadding)
             .style("font-size", "14px")
-            .style("fill", "#ffffff")
+            .style("fill", "#000000ff")
             .style("font-weight", "bold")
             .text("Date (Month and Day)");
      
@@ -112,7 +138,7 @@ class CalendarMap {
             .attr("x", 0 + vis.calendarPadding)
             .attr("y", 0)
             .style("font-size", "14px")
-            .style("fill", "#ffffff")
+            .style("fill", "#000000ff")
             .style("font-weight", "bold")
             .text("Total Flights");
 
@@ -125,7 +151,7 @@ class CalendarMap {
             .style("position", "absolute")
             .style("padding", "10px")
             .style("background", "rgba(0, 0, 0, 0.8)")
-            .style("color", "white")
+            .style("color", "#ffffffff")
             .style("border-radius", "8px")
             .style("font-size", "14px")
             .style("pointer-events", "none")
@@ -137,7 +163,7 @@ class CalendarMap {
             .datum(vis.data.data)
             .attr("class", "data-line")
             .attr("fill", "none")
-            .attr("stroke", "#307c32ff")
+            .attr("stroke", "#0d3d0fff")
             .attr("stroke-width", 2)
             .attr("opacity", 1)
             .attr("d", function(d) {

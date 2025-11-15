@@ -114,13 +114,23 @@ function initFuelGaugeInteractivity() {
     
     //handle the subtitles here
     //assuming the merging background is white color black text for now, might adjust later
-    wrapperDiv.append('p')
+    const subtitle = wrapperDiv.append('p')
+        .attr('class', 'fuel-gauge-subtitle')
         .style('text-align', 'center')
         .style('color', '#000000ff')
         .style('font-size', '20px')
         .style('font-weight', '400')
         .style('margin', '20px 20px 20px 20px') //margin on all side to be safe can change if not needed
         .text('2024 Air Transport Pollution Data (rounded to nearest million tonnes)');
+
+    wrapperDiv.append('p')
+        .attr('class', 'fuel-gauge-subtitle-2')
+        .style('text-align', 'center')
+        .style('color', '#000000b3')
+        .style('font-size', '13px')
+        .style('font-weight', '400')
+        .style('margin', '20px 20px 20px 20px') //margin on all side to be safe can change if not needed
+        .text('Hover or click segments for details');
     
     /* actual creation for main fuel guage viz */
     mainSvg = wrapperDiv.append('svg')
@@ -394,6 +404,9 @@ function transitionToNetworkView(segmentData) {
     // console.log('Inside transition to network code for country:', segmentData.country); //checking for problems
     
     
+    //TRANSITION HERE
+    
+
     mainSvg.transition()
         .duration(150) 
         .style('opacity', 0)
@@ -462,6 +475,9 @@ function createNetworkView(segmentData) {
         .style('font-weight', 'bold')
         .style('text-anchor', 'middle');
 
+    d3.select('.fuel-gauge-subtitle').text(`Top 3 Airlines in ${segmentData.country} by Flights`);
+
+    d3.select('.fuel-gauge-subtitle-2').text(`Hover airlines for details. Drag airlines around.`);
     
     //the way I decided this has the centralnode representing the country and acting as an anchro for the three airlines
     //this is the stuff for that central node
@@ -544,8 +560,8 @@ function createNetworkView(segmentData) {
         .append('circle')
         .attr('class', 'network-node')
         .attr('r', d => d.type === 'country' ? 40 : 20)
-        .style('fill', d => d.type === 'country' ? '#8b5cf6' : getSegmentColor(d.segmentId))
-        .style('stroke', '#fff')
+        .style('fill', d => d.type === 'country' ? '#585858ff' : getSegmentColor(d.segmentId))
+        .style('stroke', '#000000ff')
         .style('stroke-width', 3)
         .style('cursor', d => d.type === 'country' ? 'default' : 'grab')//only airlines are draggable
         .on('mouseenter', function(event, d) {
@@ -591,9 +607,7 @@ function createNetworkView(segmentData) {
         .style('dominant-baseline', 'middle')
         .style('font-size', d => d.type === 'country' ? '32px' : '24px')
         .style('font-weight', 'bold')
-        .style('fill', '#fff')
-        .style('stroke', '#000')
-        .style('stroke-width', '1px')
+        .style('fill', '#000000ff')
         .style('pointer-events', 'none');
     
     //tick updating
@@ -625,7 +639,8 @@ function createNetworkView(segmentData) {
 function transitionBackToGauge() {
 
     if (currentView === 'gauge') return;
-    
+    d3.select('.fuel-gauge-subtitle').text('2024 Air Transport Pollution Data (rounded to nearest million tonnes)');
+
     networkContainer.transition()
         .duration(150)
         .style('opacity', 0)
