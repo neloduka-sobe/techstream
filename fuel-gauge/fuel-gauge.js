@@ -130,7 +130,7 @@ function initFuelGaugeInteractivity() {
         .style('font-size', '13px')
         .style('font-weight', '400')
         .style('margin', '20px 20px 20px 20px') //margin on all side to be safe can change if not needed
-        .text('Hover or click segments for details');
+        .text('Hover for details or Click for another view.');
     
     /* actual creation for main fuel guage viz */
     mainSvg = wrapperDiv.append('svg')
@@ -640,6 +640,8 @@ function transitionBackToGauge() {
 
     if (currentView === 'gauge') return;
     d3.select('.fuel-gauge-subtitle').text('2024 Air Transport Pollution Data (rounded to nearest million tonnes)');
+
+    d3.select('.fuel-gauge-subtitle-2').text('Hover for details or Click for another view.');
 
     networkContainer.transition()
         .duration(150)
