@@ -740,7 +740,7 @@ function getAirlineInfo(country, airlineName, type) {
                 routes: '180+ destinations'
 
             },
-            'easyJet': { 
+            'EasyJet': { 
 
                 fleet: '350+ aircraft',
                 routes: '150+ destinations'
