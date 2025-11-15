@@ -152,6 +152,20 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
   margin: 0 auto;
 }
 
+/* Fleet Podium section */
+#v3 .wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+#v3 .vis-canvas {
+  width: 95vw;
+  height: 80vh;
+  margin: 0 auto;
+}
+
 .nav-arrow {
   position: fixed;
   top: 50%;

@@ -8,7 +8,7 @@ const App = {
     "vis-fuel-gauge": renderFuelGauge,
     "vis-calendar": renderCalendar,
     "vis-timeline-map": renderFuelGauge,
-    "vis-aircraft": renderPodium,
+    "vis-podium-aircraft": renderPodium,
     "vis-globe-links": renderGlobeLinks,
   },
   milestones: {

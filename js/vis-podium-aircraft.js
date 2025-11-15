@@ -1,8 +1,581 @@
-function renderPodium(sel,data){
-  const el=d3.select(sel);el.selectAll('*').remove();
-  const W=el.node().clientWidth||960,H=el.node().clientHeight||600;
-  const svg=el.append('svg').attr('viewBox',[0,0,W,H]);
-  svg.append('text').attr('x',W/2).attr('y',H/2)
-    .attr('text-anchor','middle').attr('fill','#1e3a5f')
-    .text('renderPodium placeholder');
+// js/vis-podium-aircraft.js
+
+async function renderPodium(selector, data) {
+  const container = d3.select(selector);
+  container.selectAll("*").remove();
+
+  // Use fixed viewBox dimensions for proper scaling
+  const viewBoxWidth = 1200;
+  const viewBoxHeight = 700;
+
+  // Show animated loading message
+  const svg = container.append("svg")
+    .attr("viewBox", `0 0 ${viewBoxWidth} ${viewBoxHeight}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("width", "100%")
+    .style("height", "100%");
+  
+  const loadingText = svg.append("text")
+    .attr("x", viewBoxWidth / 2)
+    .attr("y", viewBoxHeight / 2)
+    .attr("text-anchor", "middle")
+    .attr("fill", "#1e3a5f")
+    .attr("font-size", "18")
+    .text("Loading aircraft data...");
+
+  // Animate loading dots
+  let dots = 0;
+  const loadingInterval = setInterval(() => {
+    dots = (dots + 1) % 4;
+    loadingText.text("Loading aircraft data" + ".".repeat(dots));
+  }, 500);
+
+  try {
+    // Load aircraft lookup data
+    const aircraftData = await d3.csv("globe/aircraft.csv");
+    const aircraftLookup = new Map();
+    aircraftData.forEach(d => {
+      if (d.icao24 && d.model) {
+        aircraftLookup.set(d.icao24.toUpperCase(), {
+          model: d.model,
+          manufacturer: d.manufacturername || "Unknown",
+          typecode: d.typecode || ""
+        });
+      }
+    });
+
+    // Load flight data for three periods
+    const dateInfo = {
+      'jan': { 
+        file: 'globe/flights100k-jan1.csv', 
+        label: 'Jan 2019', 
+        color: '#4a90e2',
+        gradient: ['#4a90e2', '#6ba3e8'],
+        subtitle: 'Pre-Pandemic'
+      },
+      'apr': { 
+        file: 'globe/flights100k-apr1.csv', 
+        label: 'Apr 2020', 
+        color: '#e24a4a',
+        gradient: ['#e24a4a', '#e86a6a'],
+        subtitle: 'Peak Pandemic'
+      },
+      'dec': { 
+        file: 'globe/flights100k-dec1.csv', 
+        label: 'Dec 2022', 
+        color: '#4ae24a',
+        gradient: ['#4ae24a', '#6ae86a'],
+        subtitle: 'Post-Pandemic'
+      }
+    };
+
+    const allFlights = {};
+    
+    // Load all datasets
+    for (const [key, info] of Object.entries(dateInfo)) {
+      try {
+        const flights = await d3.csv(info.file);
+        allFlights[key] = flights;
+      } catch (err) {
+        console.warn(`Failed to load ${info.file}:`, err);
+        allFlights[key] = [];
+      }
+    }
+
+    // Count aircraft models per period
+    const modelCounts = {};
+    
+    for (const [period, flights] of Object.entries(allFlights)) {
+      const counts = {};
+      flights.forEach(f => {
+        const icao24 = (f.icao24 || "").toUpperCase();
+        const aircraft = aircraftLookup.get(icao24);
+        if (aircraft && aircraft.model) {
+          const model = aircraft.model.trim();
+          if (model) {
+            counts[model] = (counts[model] || 0) + 1;
+          }
+        }
+      });
+      modelCounts[period] = counts;
+    }
+
+    // Get top models across all periods
+    const allModels = new Set();
+    Object.values(modelCounts).forEach(counts => {
+      Object.keys(counts).forEach(model => allModels.add(model));
+    });
+
+    // Calculate total counts and get top 10 models
+    const modelTotals = {};
+    allModels.forEach(model => {
+      modelTotals[model] = Object.values(modelCounts)
+        .reduce((sum, counts) => sum + (counts[model] || 0), 0);
+    });
+
+    const topModels = Array.from(allModels)
+      .sort((a, b) => modelTotals[b] - modelTotals[a])
+      .slice(0, 10);
+
+    // Prepare data for grouped bar chart
+    const chartData = topModels.map(model => ({
+      model: model,
+      jan: modelCounts.jan?.[model] || 0,
+      apr: modelCounts.apr?.[model] || 0,
+      dec: modelCounts.dec?.[model] || 0,
+      total: modelTotals[model],
+      // Calculate trends
+      trend: {
+        preToPeak: modelCounts.jan?.[model] || 0 > 0 
+          ? ((modelCounts.apr?.[model] || 0) - (modelCounts.jan?.[model] || 0)) / (modelCounts.jan?.[model] || 1) * 100
+          : 0,
+        peakToPost: modelCounts.apr?.[model] || 0 > 0
+          ? ((modelCounts.dec?.[model] || 0) - (modelCounts.apr?.[model] || 0)) / (modelCounts.apr?.[model] || 1) * 100
+          : 0
+      }
+    }));
+
+    clearInterval(loadingInterval);
+    svg.selectAll("*").remove();
+    drawGroupedBarChart(svg, chartData, dateInfo, viewBoxWidth, viewBoxHeight, allFlights);
+
+  } catch (err) {
+    clearInterval(loadingInterval);
+    console.error("Error rendering podium:", err);
+    svg.selectAll("*").remove();
+    svg.append("text")
+      .attr("x", viewBoxWidth / 2)
+      .attr("y", viewBoxHeight / 2)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#e24a4a")
+      .attr("font-size", "16")
+      .text("Error loading data. See console.");
+  }
+}
+
+function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
+  // Professional margins - using viewBox coordinates
+  const margin = { top: 60, right: 160, bottom: 90, left: 90 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+
+  // Create gradient definitions
+  const defs = svg.append("defs");
+  const periods = ['jan', 'apr', 'dec'];
+  
+  periods.forEach(period => {
+    const gradient = defs.append("linearGradient")
+      .attr("id", `gradient-${period}`)
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "0%")
+      .attr("y2", "100%");
+    
+    gradient.append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", dateInfo[period].gradient[0])
+      .attr("stop-opacity", 1);
+    
+    gradient.append("stop")
+      .attr("offset", "100%")
+      .attr("stop-color", dateInfo[period].gradient[1])
+      .attr("stop-opacity", 0.9);
+  });
+
+  // Title with subtitle - responsive font sizes
+  const titleSize = Math.min(22, width / 55);
+  const subtitleSize = Math.min(12, width / 100);
+  
+  svg.append("text")
+    .attr("x", margin.left + chartWidth / 2)
+    .attr("y", 25)
+    .attr("text-anchor", "middle")
+    .attr("font-size", titleSize)
+    .attr("font-weight", "600")
+    .attr("fill", "#0f172a")
+    .text("Top Aircraft Models Across Time Periods");
+
+  svg.append("text")
+    .attr("x", margin.left + chartWidth / 2)
+    .attr("y", 42)
+    .attr("text-anchor", "middle")
+    .attr("font-size", subtitleSize)
+    .attr("fill", "#64748b")
+    .text("How the pandemic reshaped the global aircraft fleet");
+
+  const g = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Scales
+  const x0 = d3.scaleBand()
+    .domain(data.map(d => d.model))
+    .range([0, chartWidth])
+    .paddingInner(0.2)
+    .paddingOuter(0.05);
+
+  const x1 = d3.scaleBand()
+    .domain(periods)
+    .range([0, x0.bandwidth()])
+    .padding(0.15);
+
+  const maxValue = d3.max(data, d => Math.max(d.jan, d.apr, d.dec));
+  const y = d3.scaleLinear()
+    .domain([0, maxValue * 1.1])
+    .range([chartHeight, 0])
+    .nice();
+
+  // Subtle grid lines
+  g.append("g")
+    .attr("class", "grid")
+    .attr("transform", `translate(0,${chartHeight})`)
+    .call(d3.axisBottom(x0).tickSize(-chartHeight).tickFormat(""))
+    .selectAll("line")
+    .attr("stroke", "#f1f5f9")
+    .attr("stroke-width", 1)
+    .attr("stroke-dasharray", "2,4");
+
+  const xAxis = g.append("g")
+    .attr("transform", `translate(0,${chartHeight})`)
+    .call(d3.axisBottom(x0));
+  
+  xAxis.selectAll("text")
+    .attr("transform", "rotate(-35)")
+    .attr("text-anchor", "end")
+    .attr("dx", "-0.2em")
+    .attr("dy", "0.4em")
+    .attr("font-size", "9")
+    .attr("fill", "#475569")
+    .attr("font-weight", "500");
+
+  xAxis.selectAll("line, path")
+    .attr("stroke", "#cbd5e1")
+    .attr("stroke-width", 1);
+
+  const yAxis = g.append("g")
+    .call(d3.axisLeft(y).ticks(6).tickFormat(d3.format("d")));
+  
+  yAxis.selectAll("text")
+    .attr("font-size", "11")
+    .attr("fill", "#475569")
+    .attr("font-weight", "500");
+  
+  yAxis.selectAll("line")
+    .attr("stroke", "#e2e8f0")
+    .attr("stroke-width", 1);
+  
+  yAxis.selectAll("path")
+    .attr("stroke", "#cbd5e1")
+    .attr("stroke-width", 1.5);
+
+  g.append("text")
+    .attr("fill", "#0f172a")
+    .attr("transform", "rotate(-90)")
+    .attr("y", -70)
+    .attr("x", -chartHeight / 2)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "12")
+    .attr("font-weight", "600")
+    .text("Number of Flights");
+
+  let highlightedPeriod = null;
+
+  periods.forEach((period, periodIdx) => {
+    const bars = g.selectAll(`rect.${period}`)
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("class", `bar ${period}`)
+      .attr("x", d => x0(d.model) + x1(period))
+      .attr("y", chartHeight)
+      .attr("width", x1.bandwidth())
+      .attr("height", 0)
+      .attr("fill", `url(#gradient-${period})`)
+      .attr("rx", 3)
+      .attr("opacity", d => highlightedPeriod === null || highlightedPeriod === period ? 0.85 : 0.25)
+      .style("cursor", "pointer")
+      .style("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.12))")
+      .on("mouseover", function(event, d) {
+        if (highlightedPeriod === null) {
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .ease(d3.easeQuadOut)
+            .attr("opacity", 1)
+            .style("filter", "drop-shadow(0 4px 8px rgba(0,0,0,0.25))");
+        }
+        showTooltip(event, d, period, dateInfo[period]);
+      })
+      .on("mouseout", function() {
+        if (highlightedPeriod === null) {
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .ease(d3.easeQuadOut)
+            .attr("opacity", 0.85)
+            .style("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.12))");
+        }
+        hideTooltip();
+      })
+      .on("click", function(event, d) {
+        if (highlightedPeriod === period) {
+          highlightedPeriod = null;
+        } else {
+          highlightedPeriod = period;
+        }
+        updateHighlighting();
+      });
+
+    bars.transition()
+      .delay((d, i) => i * 20 + periodIdx * 30)
+      .duration(500)
+      .ease(d3.easeQuadOut)
+      .attr("y", d => y(d[period]))
+      .attr("height", d => chartHeight - y(d[period]));
+
+    const labels = g.selectAll(`text.${period}-label`)
+      .data(data)
+      .enter()
+      .append("text")
+      .attr("class", `${period}-label`)
+      .attr("x", d => x0(d.model) + x1(period) + x1.bandwidth() / 2)
+      .attr("y", chartHeight)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "8")
+      .attr("font-weight", "600")
+      .attr("fill", "#0f172a")
+      .attr("opacity", 0)
+      .text(d => {
+        const value = d[period];
+        const barHeight = chartHeight - y(value);
+        return (value > 0 && barHeight > 18) ? value : "";
+      });
+
+    labels.transition()
+      .delay((d, i) => i * 20 + periodIdx * 30 + 400)
+      .duration(300)
+      .ease(d3.easeQuadOut)
+      .attr("y", d => {
+        const value = d[period];
+        const barHeight = chartHeight - y(value);
+        return barHeight > 20 ? y(value) - 6 : chartHeight;
+      })
+      .attr("opacity", d => {
+        const value = d[period];
+        const barHeight = chartHeight - y(value);
+        return (value > 0 && barHeight > 20) ? 1 : 0;
+      });
+  });
+
+  function updateHighlighting() {
+    periods.forEach(period => {
+      g.selectAll(`rect.${period}`)
+        .transition()
+        .duration(300)
+        .ease(d3.easeQuadOut)
+        .attr("opacity", d => highlightedPeriod === null || highlightedPeriod === period ? 0.85 : 0.2);
+    });
+  }
+
+  // Statistics panel - positioned to not overlap, responsive sizing
+  const panelWidth = Math.min(150, width * 0.15);
+  const panelX = width - margin.right - panelWidth - 10;
+  const statsPanel = svg.append("g")
+    .attr("transform", `translate(${panelX}, ${margin.top + 8})`);
+
+  const totalJan = data.reduce((sum, d) => sum + d.jan, 0);
+  const totalApr = data.reduce((sum, d) => sum + d.apr, 0);
+  const totalDec = data.reduce((sum, d) => sum + d.dec, 0);
+  
+  const decline = ((totalApr - totalJan) / totalJan * 100).toFixed(1);
+  const recovery = ((totalDec - totalApr) / totalApr * 100).toFixed(1);
+
+  const panelHeight = 165;
+  statsPanel.append("rect")
+    .attr("width", panelWidth)
+    .attr("height", panelHeight)
+    .attr("fill", "rgba(255, 255, 255, 0.98)")
+    .attr("stroke", "#e2e8f0")
+    .attr("stroke-width", 1.5)
+    .attr("rx", 6)
+    .style("filter", "drop-shadow(0 2px 8px rgba(0,0,0,0.08))");
+
+  const titleFontSize = Math.min(12, panelWidth / 12);
+  statsPanel.append("text")
+    .attr("x", panelWidth / 2)
+    .attr("y", 20)
+    .attr("text-anchor", "middle")
+    .attr("font-size", titleFontSize)
+    .attr("font-weight", "600")
+    .attr("fill", "#0f172a")
+    .text("Fleet Statistics");
+
+  const stats = [
+    { label: "Pre-Pandemic", value: totalJan.toLocaleString(), color: dateInfo.jan.color },
+    { label: "Peak Pandemic", value: totalApr.toLocaleString(), color: dateInfo.apr.color },
+    { label: "Post-Pandemic", value: totalDec.toLocaleString(), color: dateInfo.dec.color },
+    { label: "Peak Decline", value: `${decline}%`, color: "#e24a4a" },
+    { label: "Recovery", value: `${recovery}%`, color: "#4ae24a" }
+  ];
+
+  const labelFontSize = Math.min(9, panelWidth / 16);
+  const valueFontSize = Math.min(10, panelWidth / 14);
+  
+  stats.forEach((stat, i) => {
+    const yPos = 38 + i * 22;
+    statsPanel.append("text")
+      .attr("x", 10)
+      .attr("y", yPos)
+      .attr("font-size", labelFontSize)
+      .attr("fill", "#64748b")
+      .text(stat.label + ":");
+
+    statsPanel.append("text")
+      .attr("x", panelWidth - 10)
+      .attr("y", yPos)
+      .attr("text-anchor", "end")
+      .attr("font-size", valueFontSize)
+      .attr("font-weight", "600")
+      .attr("fill", stat.color)
+      .text(stat.value);
+  });
+
+  // Interactive legend - positioned below stats panel
+  const legend = svg.append("g")
+    .attr("transform", `translate(${panelX}, ${margin.top + panelHeight + 15})`);
+
+  const legendFontSize = Math.min(10, panelWidth / 15);
+  legend.append("text")
+    .attr("x", panelWidth / 2)
+    .attr("y", 0)
+    .attr("text-anchor", "middle")
+    .attr("font-size", legendFontSize)
+    .attr("font-weight", "600")
+    .attr("fill", "#0f172a")
+    .text("Click to Filter");
+
+  const legendItems = periods.map((period, i) => ({
+    period,
+    label: dateInfo[period].label,
+    subtitle: dateInfo[period].subtitle,
+    color: dateInfo[period].color
+  }));
+
+  const legendItemSize = Math.min(14, panelWidth / 11);
+  const legendTextSize = Math.min(9, panelWidth / 16);
+  const legendSubtextSize = Math.min(7, panelWidth / 20);
+  
+  legendItems.forEach((item, i) => {
+    const legendItem = legend.append("g")
+      .attr("transform", `translate(0, ${i * 26 + 12})`)
+      .style("cursor", "pointer")
+      .on("click", function() {
+        if (highlightedPeriod === item.period) {
+          highlightedPeriod = null;
+        } else {
+          highlightedPeriod = item.period;
+        }
+        updateHighlighting();
+        updateLegend();
+      });
+
+    const legendRect = legendItem.append("rect")
+      .attr("width", legendItemSize)
+      .attr("height", legendItemSize)
+      .attr("fill", item.color)
+      .attr("rx", 2)
+      .attr("opacity", () => highlightedPeriod === null || highlightedPeriod === item.period ? 1 : 0.3)
+      .style("filter", "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
+
+    legendItem.append("text")
+      .attr("x", legendItemSize + 6)
+      .attr("y", legendItemSize * 0.5 + 1)
+      .attr("font-size", legendTextSize)
+      .attr("fill", "#0f172a")
+      .attr("font-weight", "500")
+      .text(item.label);
+
+    legendItem.append("text")
+      .attr("x", legendItemSize + 6)
+      .attr("y", legendItemSize + 8)
+      .attr("font-size", legendSubtextSize)
+      .attr("fill", "#64748b")
+      .text(item.subtitle);
+
+    // Hover effect on legend
+    legendItem.on("mouseover", function() {
+      legendRect
+        .transition()
+        .duration(150)
+        .ease(d3.easeQuadOut)
+        .attr("opacity", 1)
+        .attr("transform", "scale(1.1)");
+    }).on("mouseout", function() {
+      updateLegend();
+    });
+  });
+
+  function updateLegend() {
+    legendItems.forEach((item, i) => {
+      const legendRect = legend.selectAll(`rect`).nodes()[i];
+      if (legendRect) {
+        d3.select(legendRect)
+          .transition()
+          .duration(200)
+          .ease(d3.easeQuadOut)
+          .attr("opacity", () => highlightedPeriod === null || highlightedPeriod === item.period ? 1 : 0.3)
+          .attr("transform", "scale(1)");
+      }
+    });
+  }
+}
+
+// Enhanced tooltip
+let tooltip = null;
+
+function showTooltip(event, d, period, periodInfo) {
+  if (!tooltip) {
+    tooltip = d3.select("body").append("div")
+      .attr("class", "podium-tooltip")
+      .style("position", "absolute")
+      .style("background", "linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98))")
+      .style("color", "white")
+      .style("padding", "10px 14px")
+      .style("border-radius", "6px")
+      .style("font-size", "12px")
+      .style("pointer-events", "none")
+      .style("z-index", "10000")
+      .style("box-shadow", "0 6px 20px rgba(0,0,0,0.3)")
+      .style("border", `1.5px solid ${periodInfo.color}`)
+      .style("opacity", 0)
+      .style("transition", "opacity 0.15s");
+  }
+
+  const change = d.trend.preToPeak;
+  const trendIcon = change > 0 ? "📈" : change < 0 ? "📉" : "➡️";
+  const trendText = change > 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;
+
+  tooltip
+    .html(`
+      <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: ${periodInfo.color}">
+        ${d.model}
+      </div>
+      <div style="margin-bottom: 3px; font-size: 11px; color: #cbd5e1;">
+        ${periodInfo.label} • ${periodInfo.subtitle}
+      </div>
+      <div style="font-size: 16px; font-weight: 600; color: ${periodInfo.color}; margin: 3px 0;">
+        ${d[period]} flights
+      </div>
+      <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4px;">
+        ${trendIcon} ${trendText}
+      </div>
+    `)
+    .style("left", (event.pageX + 12) + "px")
+    .style("top", (event.pageY - 8) + "px")
+    .style("opacity", 1);
+}
+
+function hideTooltip() {
+  if (tooltip) {
+    tooltip.style("opacity", 0);
+  }
 }
