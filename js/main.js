@@ -5,12 +5,17 @@ const App = {
   sections: [],
   index: 0,
   registry: {
-    //"vis-globe-links": renderGlobeLinks,
+    "vis-fuel-gauge": renderFuelGauge,
     "vis-calendar": renderCalendar,
     "vis-timeline-map": renderFuelGauge,
-    "vis-podium-aircraft": renderPodium,
-    "vis-plane-view": renderPlaneView,
-    // "vis-fuel-gauge": renderFuelGauge
+    "vis-aircraft": renderPodium,
+    "vis-globe-links": renderGlobeLinks,
+  },
+  milestones: {
+    // section indices for: Intro, Emissions, Total Flights, Aircraft, Globe, Conclusion
+    // NOTE: we’ll fix the last one to point to the conclusion after sections are known
+    indices: [0, 2, 4, 6, 8, null],
+    labels:  ["Intro", "Emissions", "Flights", "Aircraft", "Globe", "Conclusion"]
   }
 };
 
@@ -67,8 +72,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const scroller = document.getElementById("scroller");
   App.sections = Array.from(scroller.querySelectorAll(".hsnap-child"));
-
+  App.milestones.indices[App.milestones.indices.length - 1] = App.sections.length - 1
   buildTimeline();
+
   // Ensure layout is settled, then start indicator at Intro
   requestAnimationFrame(() => updateTimeline(0));
 
@@ -192,32 +198,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   window.addEventListener("resize", () => updateTimeline()); // keep plane on track
 
-  /** Build ticks + labels for the bottom progress line */
+  /** Build ticks + labels for the bottom progress line (based on milestones) */
   function buildTimeline() {
-    const labels = ["Intro", "Global", "Calendar", "Timeline", "Podium", "Plane"];
+    const { indices, labels } = App.milestones;
+
     const ticksEl = document.getElementById("ticks");
     const labelsEl = document.getElementById("labels");
     ticksEl.innerHTML = "";
     labelsEl.innerHTML = "";
 
     const count = labels.length - 1; // normalize 0..1 along track
+
     labels.forEach((label, i) => {
       const pct = count === 0 ? 0 : i / count;
+
       const tick = document.createElement("div");
       tick.className = "tick" + (i === 0 ? " active" : "");
       tick.style.left = pct * 100 + "%";
       tick.title = label;
+
+      // remember which section index this tick corresponds to
+      tick.dataset.sectionIndex = indices[i];
+
       ticksEl.appendChild(tick);
     });
+
     labelsEl.innerHTML = labels.map((l) => `<span>${l}</span>`).join("");
   }
 
-  /** Move plane + activate ticks */
+
+  /** Move plane + activate ticks (snaps on milestones, free between) */
   function updateTimeline(progress) {
     const plane = document.getElementById("plane");
     const ticks = Array.from(document.querySelectorAll(".tick"));
+    const scroller = document.getElementById("scroller");
+    const { indices } = App.milestones;
 
-    // derive progress if not provided
+    // 1) Base progress from scroll, 0..1
     let p = progress;
     if (p == null) {
       const left = scroller.scrollLeft;
@@ -226,11 +243,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     p = Math.max(0, Math.min(1, p));
 
-    // Move plane by left:% so it aligns with the track regardless of viewport
-    plane.style.left = p * 100 + "%";
+    const current = App.index; // nearest snapped section index
 
-    // Activate ticks up to nearest section
-    const activeIdx = Math.round(p * (App.sections.length - 1));
-    ticks.forEach((t, i) => t.classList.toggle("active", i <= activeIdx));
+    // 2) Find nearest milestone to the current section
+    let nearestMilestoneIdx = 0;
+    let bestDist = Infinity;
+    indices.forEach((secIdx, i) => {
+      const d = Math.abs(secIdx - current);
+      if (d < bestDist) {
+        bestDist = d;
+        nearestMilestoneIdx = i;
+      }
+    });
+
+    const onMilestone = indices.includes(current);
+
+    // 3) Decide where the plane should be:
+    //    - If current section *is* a milestone, snap plane to that tick
+    //    - Otherwise, let plane move by raw scroll (so it can sit between stops)
+    if (onMilestone) {
+      const steps = indices.length - 1;
+      const pct = steps === 0 ? 0 : nearestMilestoneIdx / steps;
+      plane.style.left = pct * 100 + "%";
+    } else {
+      plane.style.left = p * 100 + "%";
+    }
+
+    // 4) Activate ticks up to the nearest milestone
+    ticks.forEach((t, i) => {
+      t.classList.toggle("active", i <= nearestMilestoneIdx);
+    });
   }
+
 });
