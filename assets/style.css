@@ -132,3 +132,46 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
   height: 80vh;    /* leaves room for the bottom timeline bar */
   margin: 0 auto;
 }
+
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 9998;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.10);       /* subtle dark bubble */
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+  color: #1f2933;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 150ms ease-out,
+    transform 150ms ease-out,
+    opacity 150ms ease-out;
+}
+
+.nav-arrow:hover {
+  background: rgba(15, 23, 42, 0.18);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.nav-arrow:active {
+  transform: translateY(-50%) scale(0.97);
+}
+
+.nav-arrow--left  { left: 18px; }
+.nav-arrow--right { right: 18px; }
+
+/* Hidden state when at ends */
+.nav-arrow--hidden {
+  opacity: 0;
+  pointer-events: none;
+}

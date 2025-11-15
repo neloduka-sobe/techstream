@@ -79,7 +79,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     App.index = i;
     App.sections[i].scrollIntoView({ behavior: "smooth", inline: "start" });
     updateTimeline(); // reflect immediately
+    updateArrows();
   }
+  const leftArrow  = document.getElementById("nav-left");
+  const rightArrow = document.getElementById("nav-right");
+
+  function updateArrows() {
+    if (!leftArrow || !rightArrow) return;
+    // hide left arrow on first section
+    if (App.index <= 0) {
+      leftArrow.classList.add("nav-arrow--hidden");
+    } else {
+      leftArrow.classList.remove("nav-arrow--hidden");
+    }
+    // hide right arrow on last section
+    if (App.index >= App.sections.length - 1) {
+      rightArrow.classList.add("nav-arrow--hidden");
+    } else {
+      rightArrow.classList.remove("nav-arrow--hidden");
+    }
+  }
+
+  if (leftArrow && rightArrow) {
+    leftArrow.addEventListener("click", () => snapTo(App.index - 1));
+    rightArrow.addEventListener("click", () => snapTo(App.index + 1));
+  }
+
+  // initial arrow state
+  updateArrows();
 
   scroller.addEventListener(
     "wheel",
@@ -159,6 +186,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
     App.index = best;
+    updateArrows();
   });
 
   window.addEventListener("resize", () => updateTimeline()); // keep plane on track
