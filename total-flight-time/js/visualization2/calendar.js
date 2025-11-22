@@ -163,7 +163,7 @@ class CalendarMap {
             .datum(vis.data.data)
             .attr("class", "data-line")
             .attr("fill", "none")
-            .attr("stroke", "#0d3d0fff")
+            .attr("stroke", "#000000ff")
             .attr("stroke-width", 2)
             .attr("opacity", 1)
             .attr("d", function(d) {
@@ -187,7 +187,7 @@ class CalendarMap {
             .attr("cx", d => vis.x(d.day))
             .attr("cy", d => vis.y(d.total_flights))
             .attr("r", 8)
-            .attr("fill", "#38e03eff")
+            .attr("fill", "#000000ff")
             .attr("stroke", "#000000ff")
             .attr("stroke-width", 2)
 
@@ -216,7 +216,7 @@ class CalendarMap {
                     .transition()
                     .duration(200)
                     .attr("r", 8)
-                    .attr("fill", "#38e03eff");
+                    .attr("fill", "#000000ff");
                 
                
                 tooltip.style("opacity", 0);
