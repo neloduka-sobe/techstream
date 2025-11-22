@@ -118,7 +118,7 @@ function initFuelGaugeInteractivity() {
         .attr('class', 'fuel-gauge-subtitle')
         .style('text-align', 'center')
         .style('color', '#000000ff')
-        .style('font-size', '20px')
+        .style('font-size', '30px')
         .style('font-weight', '400')
         .style('margin', '20px 20px 20px 20px') //margin on all side to be safe can change if not needed
         .text('2024 Air Transport Pollution Data (rounded to nearest million tonnes)');
@@ -127,10 +127,19 @@ function initFuelGaugeInteractivity() {
         .attr('class', 'fuel-gauge-subtitle-2')
         .style('text-align', 'center')
         .style('color', '#000000b3')
-        .style('font-size', '13px')
+        .style('font-size', '20px')
+        .style('font-weight', '400')
+        .style('margin', '20px 20px 10px 20px') //margin on all side to be safe can change if not needed
+        .text('Hover parts of the visualization for more info');
+
+    wrapperDiv.append('p')
+        .attr('class', 'fuel-gauge-subtitle-3')
+        .style('text-align', 'center')
+        .style('color', '#000000b3')
+        .style('font-size', '20px')
         .style('font-weight', '400')
         .style('margin', '20px 20px 20px 20px') //margin on all side to be safe can change if not needed
-        .text('Hover for details or Click for another view.');
+        .text('Or click any segments for more details.');
     
     /* actual creation for main fuel guage viz */
     mainSvg = wrapperDiv.append('svg')
@@ -478,6 +487,8 @@ function createNetworkView(segmentData) {
     d3.select('.fuel-gauge-subtitle').text(`Top 3 Airlines in ${segmentData.country} by Flights`);
 
     d3.select('.fuel-gauge-subtitle-2').text(`Hover airlines for details. Drag airlines around.`);
+
+    d3.select('.fuel-gauge-subtitle-3').text(`Click 'Back' to return to the fuel gauge.`);
     
     //the way I decided this has the centralnode representing the country and acting as an anchro for the three airlines
     //this is the stuff for that central node
@@ -641,7 +652,9 @@ function transitionBackToGauge() {
     if (currentView === 'gauge') return;
     d3.select('.fuel-gauge-subtitle').text('2024 Air Transport Pollution Data (rounded to nearest million tonnes)');
 
-    d3.select('.fuel-gauge-subtitle-2').text('Hover for details or Click for another view.');
+    d3.select('.fuel-gauge-subtitle-2').text('Hover parts of the visualization for more information');
+
+    d3.select('.fuel-gauge-subtitle-3').text('Or click any segments for more details');
 
     networkContainer.transition()
         .duration(150)
