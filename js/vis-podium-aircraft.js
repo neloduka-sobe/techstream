@@ -287,6 +287,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .text("Number of Flights");
 
   let highlightedPeriod = null;
+  const hoveredBars = new Set();
 
   periods.forEach((period, periodIdx) => {
     const bars = g.selectAll(`rect.${period}`)
@@ -304,22 +305,24 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .style("cursor", "pointer")
       .style("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.12))")
       .on("mouseover", function(event, d) {
+        const barId = `${d.model}-${period}`;
+        hoveredBars.add(barId);
+        
         if (highlightedPeriod === null) {
           d3.select(this)
-            .transition()
-            .duration(200)
-            .ease(d3.easeQuadOut)
+            .interrupt()
             .attr("opacity", 1)
             .style("filter", "drop-shadow(0 4px 8px rgba(0,0,0,0.25))");
         }
         showTooltip(event, d, period, dateInfo[period]);
       })
-      .on("mouseout", function() {
+      .on("mouseout", function(event, d) {
+        const barId = `${d.model}-${period}`;
+        hoveredBars.delete(barId);
+        
         if (highlightedPeriod === null) {
           d3.select(this)
-            .transition()
-            .duration(200)
-            .ease(d3.easeQuadOut)
+            .interrupt()
             .attr("opacity", 0.85)
             .style("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.12))");
         }
@@ -328,6 +331,15 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .on("click", function(event, d) {
         if (highlightedPeriod === period) {
           highlightedPeriod = null;
+          hoveredBars.forEach(barId => {
+            const [model, barPeriod] = barId.split('-');
+            const barElement = g.selectAll(`rect.${barPeriod}`).filter(function(d) { return d.model === model; });
+            barElement
+              .interrupt()
+              .attr("opacity", highlightedPeriod === null || highlightedPeriod === barPeriod ? 0.85 : 0.25)
+              .style("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.12))");
+          });
+          hoveredBars.clear();
         } else {
           highlightedPeriod = period;
         }
@@ -392,10 +404,17 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
   function updateHighlighting() {
     periods.forEach(period => {
       g.selectAll(`rect.${period}`)
-        .transition()
-        .duration(300)
-        .ease(d3.easeQuadOut)
-        .attr("opacity", d => highlightedPeriod === null || highlightedPeriod === period ? 0.85 : 0.2);
+        .each(function(d) {
+          const barId = `${d.model}-${period}`;
+          if (hoveredBars.has(barId)) {
+            return;
+          }
+          d3.select(this)
+            .transition()
+            .duration(300)
+            .ease(d3.easeQuadOut)
+            .attr("opacity", highlightedPeriod === null || highlightedPeriod === period ? 0.85 : 0.2);
+        });
     });
   }
 
@@ -490,10 +509,39 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
   const legendItemSpacing = 32;
   const spacingAfterClickToFilter = 22;
   
+  const hoveredLegendItems = new Set();
+  const rectGroupMap = new Map();
+  
   legendItems.forEach((item, i) => {
-    const legendY = clickToFilterY + spacingAfterClickToFilter + i * legendItemSpacing; // Better spacing
+    const legendY = clickToFilterY + spacingAfterClickToFilter + i * legendItemSpacing;
     
-    // Add invisible clickable area for better UX
+    const rectGroup = legend.append("g")
+      .attr("transform", `translate(${legendItemSize/2}, ${legendY + legendItemSize/2})`)
+      .attr("data-period", item.period)
+      .style("pointer-events", "none");
+    
+    rectGroupMap.set(item.period, { rectGroup, legendY, legendRect: null });
+    
+    const legendRect = rectGroup.append("rect")
+      .attr("width", legendItemSize)
+      .attr("height", legendItemSize)
+      .attr("x", -legendItemSize/2)
+      .attr("y", -legendItemSize/2)
+      .attr("fill", item.color)
+      .attr("rx", 3)
+      .attr("opacity", () => highlightedPeriod === null || highlightedPeriod === item.period ? 1 : 0.3)
+      .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.15))")
+      .attr("stroke", () => highlightedPeriod === item.period ? "#0f172a" : "none")
+      .attr("stroke-width", () => highlightedPeriod === item.period ? 2 : 0)
+      .style("transform-origin", "center center");
+    
+    rectGroupMap.get(item.period).legendRect = legendRect;
+    
+    const legendItem = legend.append("g")
+      .attr("transform", `translate(0, ${legendY})`)
+      .style("cursor", "pointer")
+      .style("pointer-events", "none");
+    
     const clickArea = legend.append("rect")
       .attr("x", 0)
       .attr("y", legendY - 8)
@@ -502,44 +550,100 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .attr("fill", "transparent")
       .attr("opacity", 0)
       .style("cursor", "pointer")
+      .style("pointer-events", "all")
       .on("click", function() {
         if (highlightedPeriod === item.period) {
           highlightedPeriod = null;
+          hoveredLegendItems.delete(item.period);
+          const stored = rectGroupMap.get(item.period);
+          if (stored) {
+            const isActive = highlightedPeriod === null || highlightedPeriod === item.period;
+            stored.rectGroup
+              .interrupt()
+              .transition()
+              .duration(200)
+              .ease(d3.easeQuadOut)
+              .attr("transform", `translate(${legendItemSize/2}, ${stored.legendY + legendItemSize/2}) scale(1)`);
+            if (stored.legendRect) {
+              stored.legendRect
+                .interrupt()
+                .transition()
+                .duration(200)
+                .ease(d3.easeQuadOut)
+                .attr("opacity", isActive ? 1 : 0.3)
+                .attr("stroke", highlightedPeriod === item.period ? "#0f172a" : "none")
+                .attr("stroke-width", highlightedPeriod === item.period ? 2 : 0)
+                .style("filter", isActive ? "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
+            }
+          }
         } else {
+          hoveredLegendItems.forEach(period => {
+            if (period !== item.period) {
+              const stored = rectGroupMap.get(period);
+              if (stored) {
+                const isActive = highlightedPeriod === null || highlightedPeriod === period;
+                stored.rectGroup
+                  .interrupt()
+                  .transition()
+                  .duration(200)
+                  .ease(d3.easeQuadOut)
+                  .attr("transform", `translate(${legendItemSize/2}, ${stored.legendY + legendItemSize/2}) scale(1)`);
+                if (stored.legendRect) {
+                  stored.legendRect
+                    .interrupt()
+                    .transition()
+                    .duration(200)
+                    .ease(d3.easeQuadOut)
+                    .attr("opacity", isActive ? 1 : 0.3)
+                    .attr("stroke", highlightedPeriod === period ? "#0f172a" : "none")
+                    .attr("stroke-width", highlightedPeriod === period ? 2 : 0)
+                    .style("filter", isActive ? "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
+                }
+              }
+            }
+          });
+          hoveredLegendItems.clear();
           highlightedPeriod = item.period;
+          hoveredLegendItems.add(item.period);
         }
         updateHighlighting();
         updateLegend();
       })
-      .on("mouseover", function() {
+      .on("mouseenter", function() {
         d3.select(this).attr("fill", "rgba(0,0,0,0.03)");
-      })
-      .on("mouseout", function() {
-        d3.select(this).attr("fill", "transparent");
-      });
-    
-    const legendItem = legend.append("g")
-      .attr("transform", `translate(0, ${legendY})`)
-      .style("cursor", "pointer")
-      .on("click", function() {
-        if (highlightedPeriod === item.period) {
-          highlightedPeriod = null;
-        } else {
-          highlightedPeriod = item.period;
+        hoveredLegendItems.add(item.period);
+        const stored = rectGroupMap.get(item.period);
+        if (stored) {
+          stored.rectGroup
+            .interrupt()
+            .attr("transform", `translate(${legendItemSize/2}, ${stored.legendY + legendItemSize/2}) scale(1.15)`);
+          if (stored.legendRect) {
+            stored.legendRect
+              .interrupt()
+              .attr("opacity", 1)
+              .style("filter", "drop-shadow(0 3px 6px rgba(0,0,0,0.2))");
+          }
         }
-        updateHighlighting();
-        updateLegend();
+      })
+      .on("mouseleave", function() {
+        d3.select(this).attr("fill", "transparent");
+        hoveredLegendItems.delete(item.period);
+        const stored = rectGroupMap.get(item.period);
+        if (stored) {
+          const isActive = highlightedPeriod === null || highlightedPeriod === item.period;
+          stored.rectGroup
+            .interrupt()
+            .attr("transform", `translate(${legendItemSize/2}, ${stored.legendY + legendItemSize/2}) scale(1)`);
+          if (stored.legendRect) {
+            stored.legendRect
+              .interrupt()
+              .attr("opacity", isActive ? 1 : 0.3)
+              .attr("stroke", highlightedPeriod === item.period ? "#0f172a" : "none")
+              .attr("stroke-width", highlightedPeriod === item.period ? 2 : 0)
+              .style("filter", isActive ? "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
+          }
+        }
       });
-
-    const legendRect = legendItem.append("rect")
-      .attr("width", legendItemSize)
-      .attr("height", legendItemSize)
-      .attr("fill", item.color)
-      .attr("rx", 3)
-      .attr("opacity", () => highlightedPeriod === null || highlightedPeriod === item.period ? 1 : 0.3)
-      .style("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.15))")
-      .attr("stroke", () => highlightedPeriod === item.period ? "#0f172a" : "none")
-      .attr("stroke-width", () => highlightedPeriod === item.period ? 2 : 0);
 
     legendItem.append("text")
       .attr("x", legendItemSize + 8)
@@ -547,6 +651,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .attr("font-size", legendTextSize)
       .attr("fill", "#0f172a")
       .attr("font-weight", () => highlightedPeriod === item.period ? "600" : "500")
+      .style("pointer-events", "none")
       .text(item.label);
 
     legendItem.append("text")
@@ -554,43 +659,45 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .attr("y", legendItemSize + 9)
       .attr("font-size", legendSubtextSize)
       .attr("fill", "#64748b")
+      .style("pointer-events", "none")
       .text(item.subtitle);
 
-    // Hover effect on legend
-    legendItem.on("mouseover", function() {
-      legendRect
-        .transition()
-        .duration(150)
-        .ease(d3.easeQuadOut)
-        .attr("opacity", 1)
-        .attr("transform", "scale(1.15)")
-        .style("filter", "drop-shadow(0 3px 6px rgba(0,0,0,0.2))");
-    }).on("mouseout", function() {
-      updateLegend();
-    });
   });
 
   function updateLegend() {
-    const spacingAfterClickToFilter = 22;
     legendItems.forEach((item, i) => {
-      const legendY = spacingAfterClickToFilter + i * legendItemSpacing;
+      if (hoveredLegendItems.has(item.period)) {
+        return;
+      }
       
-      legend.selectAll("g").each(function() {
-        const transform = d3.select(this).attr("transform");
-        if (transform && transform.includes(`translate(0, ${legendY})`)) {
-          const rect = d3.select(this).select("rect");
-          const isActive = highlightedPeriod === null || highlightedPeriod === item.period;
-          
-          rect.transition()
+      const stored = rectGroupMap.get(item.period);
+      if (stored) {
+        const isActive = highlightedPeriod === null || highlightedPeriod === item.period;
+        
+        stored.rectGroup
+          .interrupt()
+          .transition()
+          .duration(200)
+          .ease(d3.easeQuadOut)
+          .attr("transform", `translate(${legendItemSize/2}, ${stored.legendY + legendItemSize/2}) scale(1)`);
+        
+        if (stored.legendRect) {
+          stored.legendRect
+            .interrupt()
+            .transition()
             .duration(200)
             .ease(d3.easeQuadOut)
             .attr("opacity", isActive ? 1 : 0.3)
-            .attr("transform", "scale(1)")
             .attr("stroke", highlightedPeriod === item.period ? "#0f172a" : "none")
             .attr("stroke-width", highlightedPeriod === item.period ? 2 : 0)
             .style("filter", isActive ? "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
-          
-          // Update text weight
+        }
+      }
+      
+      const legendY = clickToFilterY + spacingAfterClickToFilter + i * legendItemSpacing;
+      legend.selectAll("g").each(function() {
+        const transform = d3.select(this).attr("transform");
+        if (transform && transform.includes(`translate(0, ${legendY})`)) {
           d3.select(this).selectAll("text").each(function() {
             const textContent = d3.select(this).text();
             if (textContent === item.label) {
