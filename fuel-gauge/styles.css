@@ -99,9 +99,9 @@
     transition: r 0.2s ease;
 }
 
-.network-node:hover {
+/* .network-node:hover {
     r: 10;
-}
+} */
 
 .network-label {
     user-select: none;
