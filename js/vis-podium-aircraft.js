@@ -1,4 +1,5 @@
 // js/vis-podium-aircraft.js
+// Y-axis removed - no numbers on y-axis
 
 async function renderPodium(selector, data) {
   const container = d3.select(selector);
@@ -13,7 +14,8 @@ async function renderPodium(selector, data) {
     .attr("viewBox", `0 0 ${viewBoxWidth} ${viewBoxHeight}`)
     .attr("preserveAspectRatio", "xMidYMid meet")
     .style("width", "100%")
-    .style("height", "100%");
+    .style("height", "100%")
+    .style("overflow", "hidden"); // Prevent elements from rendering outside SVG bounds
   
   const loadingText = svg.append("text")
     .attr("x", viewBoxWidth / 2)
@@ -154,8 +156,8 @@ async function renderPodium(selector, data) {
 }
 
 function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
-  // Professional margins - using viewBox coordinates
-  const margin = { top: 60, right: 160, bottom: 90, left: 90 };
+  // Professional margins - significantly increased top margin to prevent overlap with title
+  const margin = { top: 160, right: 160, bottom: 90, left: 100 };
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;
 
@@ -182,13 +184,21 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .attr("stop-opacity", 0.9);
   });
 
+  // Calculate totals early for use in subtitle
+  const totalJan = data.reduce((sum, d) => sum + (d.jan || 0), 0);
+  const totalApr = data.reduce((sum, d) => sum + (d.apr || 0), 0);
+  const totalDec = data.reduce((sum, d) => sum + (d.dec || 0), 0);
+  const decline = totalJan > 0 ? ((totalApr - totalJan) / totalJan * 100).toFixed(1) : "0.0";
+  const recovery = totalApr > 0 ? ((totalDec - totalApr) / totalApr * 100).toFixed(1) : "0.0";
+
   // Title with subtitle - responsive font sizes
+  // Positioned higher to avoid overlap with slide content
   const titleSize = Math.min(22, width / 55);
   const subtitleSize = Math.min(12, width / 100);
   
   svg.append("text")
     .attr("x", margin.left + chartWidth / 2)
-    .attr("y", 25)
+    .attr("y", 30)
     .attr("text-anchor", "middle")
     .attr("font-size", titleSize)
     .attr("font-weight", "600")
@@ -197,11 +207,23 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
 
   svg.append("text")
     .attr("x", margin.left + chartWidth / 2)
-    .attr("y", 42)
+    .attr("y", 48)
     .attr("text-anchor", "middle")
     .attr("font-size", subtitleSize)
     .attr("fill", "#64748b")
     .text("How the pandemic reshaped the global aircraft fleet");
+  
+  // Add Peak Decline and Recovery metrics below subtitle in visualization
+  svg.append("text")
+    .attr("x", margin.left + chartWidth / 2)
+    .attr("y", 64)
+    .attr("text-anchor", "middle")
+    .attr("font-size", Math.min(11, width / 110))
+    .attr("font-weight", "500")
+    .attr("fill", "#475569")
+    .style("opacity", 1)
+    .style("visibility", "visible")
+    .text(`Peak Decline: ${decline}% • Recovery: ${recovery}%`);
 
   const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -219,20 +241,15 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .padding(0.15);
 
   const maxValue = d3.max(data, d => Math.max(d.jan, d.apr, d.dec));
+  // Calculate domain with sufficient padding for value labels at the top
+  // Use enough padding (40%) so labels on top of bars have room
+  const yDomainMax = maxValue === 0 ? 1 : maxValue * 1.4;
   const y = d3.scaleLinear()
-    .domain([0, maxValue * 1.1])
+    .domain([0, yDomainMax])
     .range([chartHeight, 0])
     .nice();
 
-  // Subtle grid lines
-  g.append("g")
-    .attr("class", "grid")
-    .attr("transform", `translate(0,${chartHeight})`)
-    .call(d3.axisBottom(x0).tickSize(-chartHeight).tickFormat(""))
-    .selectAll("line")
-    .attr("stroke", "#f1f5f9")
-    .attr("stroke-width", 1)
-    .attr("stroke-dasharray", "2,4");
+  // Grid lines removed
 
   const xAxis = g.append("g")
     .attr("transform", `translate(0,${chartHeight})`)
@@ -260,27 +277,38 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .attr("font-weight", "600")
     .text("Aircraft Model");
 
+  // Y-axis with ticks and labels - ensure it doesn't extend beyond chart bounds
   const yAxis = g.append("g")
-    .call(d3.axisLeft(y).ticks(6).tickFormat(d3.format("d")));
+    .call(d3.axisLeft(y).ticks(6));
   
   yAxis.selectAll("text")
-    .attr("font-size", "11")
+    .attr("font-size", "10")
     .attr("fill", "#475569")
     .attr("font-weight", "500");
   
+  // Style axis lines and ensure path doesn't extend beyond chart
   yAxis.selectAll("line")
-    .attr("stroke", "#e2e8f0")
-    .attr("stroke-width", 1);
-  
-  yAxis.selectAll("path")
     .attr("stroke", "#cbd5e1")
-    .attr("stroke-width", 1.5);
-
+    .attr("stroke-width", 1)
+    .attr("y2", (d, i, nodes) => {
+      // Ensure tick lines don't extend beyond chart
+      const line = d3.select(nodes[i]);
+      const y2 = parseFloat(line.attr("y2")) || 0;
+      return Math.min(y2, chartHeight);
+    });
+  
+  // Clip the y-axis path to chart bounds
+  yAxis.select("path")
+    .attr("stroke", "#cbd5e1")
+    .attr("stroke-width", 1)
+    .attr("d", `M 0 ${chartHeight} V 0`);
+  
+  // Y-axis label - positioned to not extend above chart
   g.append("text")
     .attr("fill", "#0f172a")
     .attr("transform", "rotate(-90)")
-    .attr("y", -70)
-    .attr("x", -chartHeight / 2)
+    .attr("x", -(chartHeight / 2))
+    .attr("y", -60)
     .attr("text-anchor", "middle")
     .attr("font-size", "12")
     .attr("font-weight", "600")
@@ -361,14 +389,13 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .attr("x", d => x0(d.model) + x1(period) + x1.bandwidth() / 2)
       .attr("y", chartHeight)
       .attr("text-anchor", "middle")
-      .attr("font-size", "8")
+      .attr("font-size", "10")
       .attr("font-weight", "600")
       .attr("fill", "#0f172a")
       .attr("opacity", 0)
       .text(d => {
         const value = d[period];
-        const barHeight = chartHeight - y(value);
-        return (value > 0 && barHeight > 18) ? value : "";
+        return value > 0 ? value.toLocaleString() : "";
       });
 
     labels.transition()
@@ -377,13 +404,20 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .ease(d3.easeQuadOut)
       .attr("y", d => {
         const value = d[period];
-        const barHeight = chartHeight - y(value);
-        return barHeight > 20 ? y(value) - 6 : chartHeight;
+        if (value === 0) return chartHeight;
+        const barTopY = y(value);
+        const barHeight = chartHeight - barTopY;
+        // Position label on top of bar if bar is tall enough, otherwise inside bar
+        const labelOffset = 12;
+        const minY = 15; // Minimum y position to prevent overlap with top edge and title area
+        // Calculate label position: on top if bar is tall enough, otherwise centered in bar
+        const calculatedY = barHeight > 25 ? barTopY - labelOffset : barTopY + barHeight / 2;
+        // Ensure label never goes above the safe minimum (well below chart top)
+        return Math.max(calculatedY, minY);
       })
       .attr("opacity", d => {
         const value = d[period];
-        const barHeight = chartHeight - y(value);
-        return (value > 0 && barHeight > 20) ? 1 : 0;
+        return value > 0 ? 1 : 0;
       });
   });
 
@@ -424,14 +458,9 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
   const statsPanel = svg.append("g")
     .attr("transform", `translate(${panelX}, ${margin.top + 8})`);
 
-  const totalJan = data.reduce((sum, d) => sum + d.jan, 0);
-  const totalApr = data.reduce((sum, d) => sum + d.apr, 0);
-  const totalDec = data.reduce((sum, d) => sum + d.dec, 0);
-  
-  const decline = ((totalApr - totalJan) / totalJan * 100).toFixed(1);
-  const recovery = ((totalDec - totalApr) / totalApr * 100).toFixed(1);
-
-  const panelHeight = 165;
+  // Totals already calculated above for use in subtitle  
+  // Fleet Statistics box now only shows 3 items (Pre-Pandemic, Peak Pandemic, Post-Pandemic)
+  const panelHeight = 110; // Reduced height for 3 stats only
   statsPanel.append("rect")
     .attr("width", panelWidth)
     .attr("height", panelHeight)
@@ -454,9 +483,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
   const stats = [
     { label: "Pre-Pandemic", value: totalJan.toLocaleString(), color: dateInfo.jan.color },
     { label: "Peak Pandemic", value: totalApr.toLocaleString(), color: dateInfo.apr.color },
-    { label: "Post-Pandemic", value: totalDec.toLocaleString(), color: dateInfo.dec.color },
-    { label: "Peak Decline", value: `${decline}%`, color: "#e24a4a" },
-    { label: "Recovery", value: `${recovery}%`, color: "#4ae24a" }
+    { label: "Post-Pandemic", value: totalDec.toLocaleString(), color: dateInfo.dec.color }
   ];
 
   const labelFontSize = Math.min(9, panelWidth / 16);
