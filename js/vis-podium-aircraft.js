@@ -51,8 +51,8 @@ async function renderPodium(selector, data) {
       'jan': { 
         file: 'globe/flights100k-jan1.csv', 
         label: 'Jan 2019', 
-        color: '#4a90e2',
-        gradient: ['#4a90e2', '#6ba3e8'],
+        color: '#2563eb',
+        gradient: ['#2563eb', '#3b82f6'],
         subtitle: 'Pre-Pandemic'
       },
       'apr': { 
@@ -412,19 +412,29 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .on("click", function(event, d) {
         if (highlightedPeriod === period) {
           highlightedPeriod = null;
-          hoveredBars.forEach(barId => {
-            const [model, barPeriod] = barId.split('-');
-            const barElement = g.selectAll(`rect.${barPeriod}`).filter(function(d) { return d.model === model; });
-            barElement
-              .interrupt()
-              .attr("opacity", highlightedPeriod === null || highlightedPeriod === barPeriod ? 0.85 : 0.25)
-              .style("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.12))");
-          });
-          hoveredBars.clear();
         } else {
           highlightedPeriod = period;
         }
-        updateHighlighting();
+        
+        // Update all bars directly, including hovered ones
+        periods.forEach(p => {
+          g.selectAll(`rect.${p}`)
+            .each(function(barData) {
+              const barId = `${barData.model}-${p}`;
+              const isHovered = hoveredBars.has(barId);
+              const isHighlighted = highlightedPeriod === null || highlightedPeriod === p;
+              
+              d3.select(this)
+                .interrupt()
+                .transition()
+                .duration(300)
+                .ease(d3.easeQuadOut)
+                .attr("opacity", isHighlighted ? (isHovered ? 1 : 0.85) : 0.2)
+                .style("filter", isHighlighted ? (isHovered ? "drop-shadow(0 4px 8px rgba(0,0,0,0.25))" : "drop-shadow(0 1px 3px rgba(0,0,0,0.12))") : "drop-shadow(0 1px 3px rgba(0,0,0,0.12))");
+            });
+        });
+        
+        updateLegend();
       });
 
     bars.transition()
