@@ -541,7 +541,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
 
   // Totals already calculated above for use in subtitle  
   // Fleet Statistics box now only shows 3 items (Pre-Pandemic, Peak Pandemic, Post-Pandemic)
-  const panelHeight = 110; // Reduced height for 3 stats only
+  const panelHeight = 120; // Adjusted height for spacing
   statsPanel.append("rect")
     .attr("width", panelWidth)
     .attr("height", panelHeight)
@@ -567,16 +567,17 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     { label: "Post-Pandemic", value: totalDec.toLocaleString(), color: dateInfo.dec.color }
   ];
 
-  const labelFontSize = Math.min(9, panelWidth / 16);
+  const labelFontSize = Math.min(13, panelWidth / 11);
   const valueFontSize = Math.min(10, panelWidth / 14);
   
   stats.forEach((stat, i) => {
-    const yPos = 38 + i * 22;
+    const yPos = 38 + i * 26;
     statsPanel.append("text")
       .attr("x", 10)
       .attr("y", yPos)
       .attr("font-size", labelFontSize)
-      .attr("fill", "#64748b")
+      .attr("font-weight", "600")
+      .attr("fill", "#475569")
       .text(stat.label + ":");
 
     statsPanel.append("text")
@@ -602,7 +603,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .attr("font-size", legendFontSize)
     .attr("font-weight", "600")
     .attr("fill", "#0f172a")
-    .text("Click to Filter");
+    .text("Click to Highlight");
 
   const legendItems = periods.map((period, i) => ({
     period,
@@ -613,8 +614,8 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
 
   const legendItemSize = Math.min(16, panelWidth / 10);
   const legendTextSize = Math.min(10, panelWidth / 15);
-  const legendSubtextSize = Math.min(8, panelWidth / 18);
-  const legendItemSpacing = 32;
+  const legendSubtextSize = Math.min(13, panelWidth / 11);
+  const legendItemSpacing = 35;
   const spacingAfterClickToFilter = 22;
   
   const hoveredLegendItems = new Set();
@@ -766,7 +767,8 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
       .attr("x", legendItemSize + 8)
       .attr("y", legendItemSize + 9)
       .attr("font-size", legendSubtextSize)
-      .attr("fill", "#64748b")
+      .attr("font-weight", "600")
+      .attr("fill", "#475569")
       .style("pointer-events", "none")
       .text(item.subtitle);
 
