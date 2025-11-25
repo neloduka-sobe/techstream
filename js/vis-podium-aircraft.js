@@ -15,7 +15,7 @@ async function renderPodium(selector, data) {
     .attr("preserveAspectRatio", "xMidYMid meet")
     .style("width", "100%")
     .style("height", "100%")
-    .style("overflow", "hidden"); // Prevent elements from rendering outside SVG bounds
+    .style("overflow", "visible"); // Allow y-axis labels to be visible
   
   const loadingText = svg.append("text")
     .attr("x", viewBoxWidth / 2)
@@ -156,8 +156,8 @@ async function renderPodium(selector, data) {
 }
 
 function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
-  // Professional margins - significantly increased top margin to prevent overlap with title
-  const margin = { top: 160, right: 160, bottom: 90, left: 100 };
+  // Professional margins - increased left margin to accommodate y-axis labels
+  const margin = { top: 160, right: 160, bottom: 90, left: 120 };
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;
 
@@ -240,14 +240,27 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .range([0, x0.bandwidth()])
     .padding(0.15);
 
+  // Collect all data values to calculate percentiles
+  const allValues = [];
+  data.forEach(d => {
+    if (d.jan > 0) allValues.push(d.jan);
+    if (d.apr > 0) allValues.push(d.apr);
+    if (d.dec > 0) allValues.push(d.dec);
+  });
+  allValues.sort((a, b) => a - b);
+  
   const maxValue = d3.max(data, d => Math.max(d.jan, d.apr, d.dec));
+  const q25 = d3.quantile(allValues, 0.25) || 0;
+  const q75 = d3.quantile(allValues, 0.75) || 0;
+  
   // Calculate domain with sufficient padding for value labels at the top
   // Use enough padding (40%) so labels on top of bars have room
   const yDomainMax = maxValue === 0 ? 1 : maxValue * 1.4;
+  
+  // Create scale first without nice() to set custom ticks
   const y = d3.scaleLinear()
     .domain([0, yDomainMax])
-    .range([chartHeight, 0])
-    .nice();
+    .range([chartHeight, 0]);
 
   // Grid lines removed
 
@@ -277,27 +290,78 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .attr("font-weight", "600")
     .text("Aircraft Model");
 
-  // Y-axis with ticks and labels - ensure it doesn't extend beyond chart bounds
+  // Y-axis with custom ticks: max value, 75th percentile, 25th percentile
+  // Format numbers with commas for thousands
+  const yAxisFormat = d3.format(",d");
+  
+  // Create custom tick values - round to nearest hundred
+  const roundToHundred = (value) => Math.round(value / 100) * 100;
+  
+  const customTicks = [0];
+  const roundedQ25 = roundToHundred(q25);
+  const roundedQ75 = roundToHundred(q75);
+  const roundedMax = roundToHundred(maxValue);
+  
+  if (roundedQ25 > 0 && roundedQ25 <= yDomainMax) customTicks.push(roundedQ25);
+  if (roundedQ75 > 0 && roundedQ75 <= yDomainMax) customTicks.push(roundedQ75);
+  if (roundedMax > 0 && roundedMax <= yDomainMax) customTicks.push(roundedMax);
+  
+  // Remove duplicates and sort
+  const uniqueTicks = [...new Set(customTicks)].sort((a, b) => a - b);
+  
+  // Debug: log tick values
+  console.log("Y-axis ticks:", uniqueTicks, "Max:", roundedMax, "Q25:", roundedQ25, "Q75:", roundedQ75);
+  
+  // Create y-axis with custom ticks (lines only, we'll add text manually)
   const yAxis = g.append("g")
-    .call(d3.axisLeft(y).ticks(6));
+    .call(d3.axisLeft(y)
+      .tickValues(uniqueTicks)
+      .tickFormat("") // Don't show default text
+      .tickSize(-chartWidth)); // Extend ticks across chart width
   
-  yAxis.selectAll("text")
-    .attr("font-size", "10")
-    .attr("fill", "#475569")
-    .attr("font-weight", "500");
+  // Add small tick indicators on the y-axis line itself
+  const yAxisTicks = g.append("g")
+    .attr("class", "y-axis-tick-indicators");
   
-  // Style axis lines and ensure path doesn't extend beyond chart
+  uniqueTicks.forEach(tickValue => {
+    const yPos = y(tickValue);
+    // Add small tick mark on the y-axis line
+    yAxisTicks.append("line")
+      .attr("x1", -5)
+      .attr("x2", 0)
+      .attr("y1", yPos)
+      .attr("y2", yPos)
+      .attr("stroke", "#475569")
+      .attr("stroke-width", 2);
+  });
+  
+  // Manually create y-axis text labels to ensure they're visible
+  const yAxisLabels = g.append("g")
+    .attr("class", "y-axis-labels");
+  
+  uniqueTicks.forEach(tickValue => {
+    const yPos = y(tickValue);
+    yAxisLabels.append("text")
+      .attr("x", -15)
+      .attr("y", yPos)
+      .attr("text-anchor", "end")
+      .attr("font-size", "12")
+      .attr("fill", "#1e293b")
+      .attr("font-weight", "600")
+      .attr("dy", "0.35em") // Center vertically on tick
+      .style("opacity", 1)
+      .text(yAxisFormat(tickValue));
+  });
+  
+  console.log("Created", uniqueTicks.length, "y-axis labels at positions:", uniqueTicks.map(t => y(t)));
+  
+  // Style the y-axis lines (tick marks)
   yAxis.selectAll("line")
     .attr("stroke", "#cbd5e1")
     .attr("stroke-width", 1)
-    .attr("y2", (d, i, nodes) => {
-      // Ensure tick lines don't extend beyond chart
-      const line = d3.select(nodes[i]);
-      const y2 = parseFloat(line.attr("y2")) || 0;
-      return Math.min(y2, chartHeight);
-    });
+    .attr("x2", 0); // Only show tick marks, not full width lines
   
-  // Clip the y-axis path to chart bounds
+  // Style the y-axis path (main axis line)
   yAxis.select("path")
     .attr("stroke", "#cbd5e1")
     .attr("stroke-width", 1)
