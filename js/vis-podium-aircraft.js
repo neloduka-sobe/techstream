@@ -212,18 +212,6 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .attr("font-size", subtitleSize)
     .attr("fill", "#64748b")
     .text("How the pandemic reshaped the global aircraft fleet");
-  
-  // Add Peak Decline and Recovery metrics below subtitle in visualization
-  svg.append("text")
-    .attr("x", margin.left + chartWidth / 2)
-    .attr("y", 84)
-    .attr("text-anchor", "middle")
-    .attr("font-size", Math.min(11, width / 110))
-    .attr("font-weight", "500")
-    .attr("fill", "#475569")
-    .style("opacity", 1)
-    .style("visibility", "visible")
-    .text(`Peak Decline: ${decline}% • Recovery: ${recovery}%`);
 
   const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -380,6 +368,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
 
   let highlightedPeriod = null;
   const hoveredBars = new Set();
+  const allLabelData = []; // Store all label data for collision detection
 
   periods.forEach((period, periodIdx) => {
     const bars = g.selectAll(`rect.${period}`)
@@ -462,6 +451,31 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
         return value > 0 ? value.toLocaleString() : "";
       });
 
+    // Calculate initial positions and store label data
+    labels.each(function(d) {
+      const value = d[period];
+      if (value === 0) return;
+      
+      const barTopY = y(value);
+      const barHeight = chartHeight - barTopY;
+      const labelOffset = 12;
+      const minY = 15;
+      const calculatedY = barHeight > 25 ? barTopY - labelOffset : barTopY + barHeight / 2;
+      const finalY = Math.max(calculatedY, minY);
+      
+      allLabelData.push({
+        element: d3.select(this),
+        x: x0(d.model) + x1(period) + x1.bandwidth() / 2,
+        y: finalY,
+        barTopY: barTopY,
+        barHeight: barHeight,
+        value: value,
+        model: d.model,
+        period: period,
+        barWidth: x1.bandwidth()
+      });
+    });
+    
     labels.transition()
       .delay((d, i) => i * 20 + periodIdx * 30 + 400)
       .duration(300)
@@ -471,12 +485,9 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
         if (value === 0) return chartHeight;
         const barTopY = y(value);
         const barHeight = chartHeight - barTopY;
-        // Position label on top of bar if bar is tall enough, otherwise inside bar
         const labelOffset = 12;
-        const minY = 15; // Minimum y position to prevent overlap with top edge and title area
-        // Calculate label position: on top if bar is tall enough, otherwise centered in bar
+        const minY = 15;
         const calculatedY = barHeight > 25 ? barTopY - labelOffset : barTopY + barHeight / 2;
-        // Ensure label never goes above the safe minimum (well below chart top)
         return Math.max(calculatedY, minY);
       })
       .attr("opacity", d => {
@@ -484,6 +495,12 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
         return value > 0 ? 1 : 0;
       });
   });
+  
+  // Collision detection and adjustment after all labels are positioned
+  // Wait for transitions to complete, then adjust overlapping labels
+  setTimeout(() => {
+    adjustLabelOverlaps(allLabelData, chartHeight);
+  }, 1000);
 
   // Add aircraft model names under each bar group
   g.selectAll("text.model-name")
@@ -801,6 +818,179 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
         }
       });
     });
+  }
+}
+
+// Collision detection function to prevent label overlaps
+function adjustLabelOverlaps(labelData, chartHeight) {
+  if (!labelData || labelData.length === 0) return;
+  
+  // Estimate label height (font-size 10 + some padding)
+  const labelHeight = 14;
+  const labelPadding = 3; // Extra padding between labels
+  const minY = 15; // Minimum y position
+  const labelOffset = 12; // Standard offset from bar top
+  
+  // Sort labels by y position (top to bottom)
+  const sortedLabels = [...labelData].filter(d => d.value > 0).sort((a, b) => a.y - b.y);
+  
+  // Multiple passes to resolve all overlaps
+  let hasOverlaps = true;
+  let iterations = 0;
+  const maxIterations = 10;
+  
+  while (hasOverlaps && iterations < maxIterations) {
+    hasOverlaps = false;
+    iterations++;
+    
+    // Check for overlaps and adjust positions
+    for (let i = 1; i < sortedLabels.length; i++) {
+      const currentLabel = sortedLabels[i];
+      const barTopY = currentLabel.barTopY;
+      const maxAllowedY = barTopY - labelOffset; // Never go below this (never inside bar)
+      
+      // Check overlap with all previous labels
+      for (let j = 0; j < i; j++) {
+        const prevLabel = sortedLabels[j];
+        
+        // Check if labels are horizontally close (within bar width + some margin)
+        const horizontalDistance = Math.abs(currentLabel.x - prevLabel.x);
+        const maxHorizontalDistance = Math.max(currentLabel.barWidth, prevLabel.barWidth) / 2 + 15;
+        
+        if (horizontalDistance < maxHorizontalDistance) {
+          const minVerticalDistance = labelHeight + labelPadding;
+          
+          // Ensure larger value is always above smaller value
+          // If current label has larger value but is below prev label, swap positions
+          if (currentLabel.value > prevLabel.value && currentLabel.y > prevLabel.y) {
+            // Current has larger value but is positioned below - need to swap
+            const tempY = currentLabel.y;
+            const prevBarTopY = prevLabel.barTopY;
+            const prevMaxAllowedY = prevBarTopY - labelOffset;
+            
+            // Try to move current (larger) label above prev (smaller) label
+            const desiredY = prevLabel.y - minVerticalDistance;
+            if (desiredY <= maxAllowedY && desiredY >= minY) {
+              currentLabel.y = desiredY;
+              // Move prev label down to make space
+              prevLabel.y = currentLabel.y + minVerticalDistance;
+              // Ensure prev label stays above its bar
+              if (prevLabel.y > prevMaxAllowedY) {
+                prevLabel.y = prevMaxAllowedY;
+              }
+              
+              prevLabel.element
+                .transition()
+                .duration(200)
+                .ease(d3.easeQuadOut)
+                .attr("y", prevLabel.y);
+              
+              hasOverlaps = true;
+            }
+          } else if (prevLabel.value > currentLabel.value && prevLabel.y > currentLabel.y) {
+            // Prev has larger value but is positioned below - need to swap
+            const prevBarTopY = prevLabel.barTopY;
+            const prevMaxAllowedY = prevBarTopY - labelOffset;
+            
+            // Try to move prev (larger) label above current (smaller) label
+            const desiredY = currentLabel.y - minVerticalDistance;
+            if (desiredY <= prevMaxAllowedY && desiredY >= minY) {
+              prevLabel.y = desiredY;
+              // Move current label down to make space
+              currentLabel.y = prevLabel.y + minVerticalDistance;
+              // Ensure current label stays above its bar
+              if (currentLabel.y > maxAllowedY) {
+                currentLabel.y = maxAllowedY;
+              }
+              
+              prevLabel.element
+                .transition()
+                .duration(200)
+                .ease(d3.easeQuadOut)
+                .attr("y", prevLabel.y);
+              
+              hasOverlaps = true;
+            }
+          }
+          
+          // Check vertical overlap (after ensuring value order)
+          const verticalDistance = currentLabel.y - prevLabel.y;
+          
+          if (verticalDistance < minVerticalDistance) {
+            // Labels overlap - adjust positions ensuring larger value stays above
+            hasOverlaps = true;
+            
+            if (currentLabel.value >= prevLabel.value) {
+              // Current label has larger or equal value - should be above
+              const desiredY = prevLabel.y - minVerticalDistance;
+              
+              // Keep label above bar: label.y must be <= barTopY - labelOffset (never inside bar)
+              if (desiredY <= maxAllowedY) {
+                // Can move current label up without going into bar
+                currentLabel.y = Math.max(desiredY, minY);
+              } else {
+                // Can't move current label up enough - try moving previous label down
+                const prevBarTopY = prevLabel.barTopY;
+                const prevMaxAllowedY = prevBarTopY - labelOffset;
+                // Move prev label down to create space for current label
+                const prevDesiredY = maxAllowedY + minVerticalDistance;
+                
+                // Check if we can move previous label down without putting it inside its bar
+                if (prevDesiredY <= prevMaxAllowedY && prevDesiredY >= minY) {
+                  // Can move previous label down to create space
+                  prevLabel.y = prevDesiredY;
+                  prevLabel.element
+                    .transition()
+                    .duration(200)
+                    .ease(d3.easeQuadOut)
+                    .attr("y", prevLabel.y);
+                  // Current label stays at maxAllowedY (above its bar)
+                  currentLabel.y = maxAllowedY;
+                } else {
+                  // Both labels are constrained - keep current label at maxAllowedY
+                  // This might still overlap slightly, but label stays above bar
+                  currentLabel.y = maxAllowedY;
+                }
+              }
+            } else {
+              // Prev label has larger value - should be above, move current down
+              const prevBarTopY = prevLabel.barTopY;
+              const prevMaxAllowedY = prevBarTopY - labelOffset;
+              const desiredY = prevLabel.y + minVerticalDistance;
+              
+              // Keep current label above its bar
+              if (desiredY <= maxAllowedY) {
+                currentLabel.y = desiredY;
+              } else {
+                // Can't move current down enough - try moving prev up
+                const prevDesiredY = maxAllowedY - minVerticalDistance;
+                if (prevDesiredY <= prevMaxAllowedY && prevDesiredY >= minY) {
+                  prevLabel.y = prevDesiredY;
+                  prevLabel.element
+                    .transition()
+                    .duration(200)
+                    .ease(d3.easeQuadOut)
+                    .attr("y", prevLabel.y);
+                  currentLabel.y = maxAllowedY;
+                } else {
+                  currentLabel.y = maxAllowedY;
+                }
+              }
+            }
+            
+            // Update the DOM element
+            currentLabel.element
+              .transition()
+              .duration(200)
+              .ease(d3.easeQuadOut)
+              .attr("y", currentLabel.y);
+          }
+        }
+      }
+    }
+    
+    // Re-sort after adjustments
+    sortedLabels.sort((a, b) => a.y - b.y);
   }
 }
 
