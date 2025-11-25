@@ -193,8 +193,8 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
 
   // Title with subtitle - responsive font sizes
   // Positioned lower to avoid overlap with previous slide
-  const titleSize = Math.min(22, width / 55);
-  const subtitleSize = Math.min(12, width / 100);
+  const titleSize = Math.min(28, width / 45);
+  const subtitleSize = Math.min(18, width / 65);
   
   svg.append("text")
     .attr("x", margin.left + chartWidth / 2)
