@@ -248,3 +248,40 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
 .transition-sources a:hover {
   text-decoration: underline;
 }
+/* Larger, consistent titles */
+.transition-title h2 {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* Larger, clearer paragraph text */
+.transition-body {
+  max-width: 900px;
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  line-height: 1.7;
+  color: #0f172a;
+  text-align: center;
+  margin: 0.75rem auto;
+}
+
+/* Space above sources block */
+.transition-sources {
+  margin-top: 2.5rem;
+  text-align: center;
+  opacity: 0.9;
+  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+}
+
+.transition-sources h3 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(1.1rem, 1.8vw, 1.3rem);
+}
+
+/* Slight top padding so transitions feel like slides */
+.panel .wrap {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
