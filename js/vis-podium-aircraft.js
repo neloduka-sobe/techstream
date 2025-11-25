@@ -15,7 +15,7 @@ async function renderPodium(selector, data) {
     .attr("preserveAspectRatio", "xMidYMid meet")
     .style("width", "100%")
     .style("height", "100%")
-    .style("overflow", "visible"); // Allow y-axis labels to be visible
+    .style("overflow", "hidden"); // Prevent overlap with other slides
   
   const loadingText = svg.append("text")
     .attr("x", viewBoxWidth / 2)
@@ -156,8 +156,8 @@ async function renderPodium(selector, data) {
 }
 
 function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
-  // Professional margins - increased left margin to accommodate y-axis labels
-  const margin = { top: 160, right: 160, bottom: 90, left: 120 };
+  // Professional margins - increased margins to prevent overlap and accommodate y-axis labels
+  const margin = { top: 180, right: 160, bottom: 90, left: 130 };
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;
 
@@ -192,13 +192,13 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
   const recovery = totalApr > 0 ? ((totalDec - totalApr) / totalApr * 100).toFixed(1) : "0.0";
 
   // Title with subtitle - responsive font sizes
-  // Positioned higher to avoid overlap with slide content
+  // Positioned lower to avoid overlap with previous slide
   const titleSize = Math.min(22, width / 55);
   const subtitleSize = Math.min(12, width / 100);
   
   svg.append("text")
     .attr("x", margin.left + chartWidth / 2)
-    .attr("y", 30)
+    .attr("y", 50)
     .attr("text-anchor", "middle")
     .attr("font-size", titleSize)
     .attr("font-weight", "600")
@@ -207,7 +207,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
 
   svg.append("text")
     .attr("x", margin.left + chartWidth / 2)
-    .attr("y", 48)
+    .attr("y", 68)
     .attr("text-anchor", "middle")
     .attr("font-size", subtitleSize)
     .attr("fill", "#64748b")
@@ -216,7 +216,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
   // Add Peak Decline and Recovery metrics below subtitle in visualization
   svg.append("text")
     .attr("x", margin.left + chartWidth / 2)
-    .attr("y", 64)
+    .attr("y", 84)
     .attr("text-anchor", "middle")
     .attr("font-size", Math.min(11, width / 110))
     .attr("font-weight", "500")
