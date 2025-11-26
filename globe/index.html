@@ -247,6 +247,12 @@
   function beginStory() {
     d3.select("#storyOverlay").style("display", "flex");
     displayNextStoryScreen();
+
+    // Hide dropdowns and labels
+    d3.select("#prefixDropdown").style("display", "none");
+    d3.select("#countryDropdown").style("display", "none");
+    d3.select("#prefixLabel").style("display", "none");
+    d3.select("#countryLabel").style("display", "none");
   }
 
   function displayNextStoryScreen() {
@@ -324,7 +330,7 @@
             d3.select("body").append("button")
               .attr("id", "continueStoryButton")
               .style("position", "absolute")
-              .style("top", "830px")
+              .style("top", "740px")
               .style("left", "50%")
               .style("transform", "translateX(-50%)")
               .style("padding", "10px 20px")
@@ -568,6 +574,12 @@
             if (minutes >= 1380) { // 11:00 PM is 1380 minutes
               clearInterval(waitForTimelineAt2300Again);
               playPauseBtn.dispatch("click"); // Pause the timeline
+
+              // Show dropdowns and labels
+              d3.select("#prefixDropdown").style("display", "block");
+              d3.select("#countryDropdown").style("display", "block");
+              d3.select("#prefixLabel").style("display", "block");
+              d3.select("#countryLabel").style("display", "block");
 
               alert("Explore more by interacting with the globe and filters!");
             }
@@ -878,6 +890,26 @@
     const svg = container.append("svg")
       .attr("width", currentWidth)
       .attr("height", currentHeight);
+
+    if (multiviewMode) {
+      let labelText = '';
+      if (datasetKey === 'jan') {
+        labelText = 'Before COVID';
+      } else if (datasetKey === 'apr') {
+        labelText = 'Peak COVID Lockdowns';
+      } else if (datasetKey === 'dec') {
+        labelText = 'After COVID';
+      }
+
+      svg.append("text")
+        .attr("x", datasetKey === 'apr' ? currentWidth : currentWidth - 10)
+        .attr("y", 20)
+        .attr("text-anchor", "end")
+        .style("font-size", "14px")
+        .style("font-weight", "bold")
+        .style("fill", "black")
+        .text(labelText);
+    }
 
     // Create a local projection for this globe instance
     const localProjection = d3.geoOrthographic()
