@@ -1446,8 +1446,13 @@
     }
 
     let topPrefixes;
+    let legendTitleText = "Top Airlines";
 
-    if (activeCountryHighlight) {
+    if (activePrefixHighlight) {
+        topPrefixes = [activePrefixHighlight];
+        const airlineName = faaLookup[activePrefixHighlight] ? faaLookup[activePrefixHighlight].Company : activePrefixHighlight;
+        legendTitleText = `Selected Airline: ${airlineName}`;
+    } else if (activeCountryHighlight) {
         const countryPrefixes = Object.keys(faaLookup).filter(prefix => {
             return faaLookup[prefix].Country === activeCountryHighlight;
         });
@@ -1461,16 +1466,17 @@
 
         topPrefixes = Object.keys(prefixCountsInCountry)
             .sort((a, b) => prefixCountsInCountry[b] - prefixCountsInCountry[a]);
+        
+        topPrefixes = topPrefixes.slice(0, 10); // Limit to 10
+        legendTitleText = `Top Airlines in ${activeCountryHighlight}`;
     } else {
-        topPrefixes = uiData.topPrefixes || [];
+        topPrefixes = (uiData.topPrefixes || []).slice(0, 10); // Limit to 10
     }
-
-    topPrefixes = topPrefixes.slice(0, 10); // Limit to 10 to avoid overflow
 
     const legendTitle = legendContainer.append("div")
         .style("font-weight", "bold")
         .style("margin-bottom", "5px")
-        .text(activeCountryHighlight ? `Top Airlines in ${activeCountryHighlight}` : "Top Airlines");
+        .text(legendTitleText);
 
     const legendItems = legendContainer.selectAll(".legend-item")
         .data(topPrefixes)
