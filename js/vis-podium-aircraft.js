@@ -36,6 +36,8 @@ async function renderPodium(selector, data) {
     // Load aircraft lookup data
     const aircraftData = await d3.csv("globe/aircraft.csv");
     const aircraftLookup = new Map();
+    const modelInfoLookup = new Map(); // Lookup by model name for plane cards
+    
     aircraftData.forEach(d => {
       if (d.icao24 && d.model) {
         aircraftLookup.set(d.icao24.toUpperCase(), {
@@ -43,6 +45,19 @@ async function renderPodium(selector, data) {
           manufacturer: d.manufacturername || "Unknown",
           typecode: d.typecode || ""
         });
+        
+        // Store model info (use first occurrence or merge info)
+        const modelName = d.model.trim();
+        if (modelName && !modelInfoLookup.has(modelName)) {
+          modelInfoLookup.set(modelName, {
+            model: modelName,
+            manufacturer: d.manufacturername || "Unknown",
+            typecode: d.typecode || "",
+            operator: d.operator || "",
+            engines: d.engines || "",
+            built: d.built || ""
+          });
+        }
       }
     });
 
@@ -139,7 +154,7 @@ async function renderPodium(selector, data) {
 
     clearInterval(loadingInterval);
     svg.selectAll("*").remove();
-    drawGroupedBarChart(svg, chartData, dateInfo, viewBoxWidth, viewBoxHeight, allFlights);
+    drawGroupedBarChart(svg, chartData, dateInfo, viewBoxWidth, viewBoxHeight, allFlights, modelInfoLookup);
 
   } catch (err) {
     clearInterval(loadingInterval);
@@ -155,7 +170,7 @@ async function renderPodium(selector, data) {
   }
 }
 
-function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
+function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights, modelInfoLookup) {
   // Professional margins - increased margins to prevent overlap and accommodate y-axis labels
   const margin = { top: 180, right: 160, bottom: 90, left: 130 };
   const chartWidth = width - margin.left - margin.right;
@@ -512,7 +527,7 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     adjustLabelOverlaps(allLabelData, chartHeight);
   }, 1000);
 
-  // Add aircraft model names under each bar group
+  // Add aircraft model names under each bar group with hover functionality
   g.selectAll("text.model-name")
     .data(data)
     .enter()
@@ -524,7 +539,24 @@ function drawGroupedBarChart(svg, data, dateInfo, width, height, allFlights) {
     .attr("font-size", "9")
     .attr("font-weight", "500")
     .attr("fill", "#475569")
-    .text(d => d.model);
+    .style("cursor", "pointer")
+    .style("text-decoration", "underline")
+    .style("text-decoration-color", "transparent")
+    .text(d => d.model)
+    .on("mouseover", function(event, d) {
+      d3.select(this)
+        .attr("fill", "#1e40af")
+        .style("text-decoration-color", "#1e40af")
+        .attr("font-weight", "600");
+      showPlaneCard(event, d, dateInfo, modelInfoLookup);
+    })
+    .on("mouseout", function(event, d) {
+      d3.select(this)
+        .attr("fill", "#475569")
+        .style("text-decoration-color", "transparent")
+        .attr("font-weight", "500");
+      hidePlaneCard();
+    });
 
   function updateHighlighting() {
     periods.forEach(period => {
@@ -1054,5 +1086,675 @@ function showTooltip(event, d, period, periodInfo) {
 function hideTooltip() {
   if (tooltip) {
     tooltip.style("opacity", 0);
+  }
+}
+
+// Helper function to get aircraft image URL (using Wikimedia Commons as primary, JetPhotos as fallback)
+function getAircraftImageUrl(modelName, variant = "") {
+  // Use Wikimedia Commons for reliable image hosting
+  // Format: https://commons.wikimedia.org/wiki/File:filename.jpg
+  // For now, we'll use a search-based approach with fallbacks
+  const searchTerm = encodeURIComponent(modelName.replace(/\s+/g, '_'));
+  return `https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg`;
+}
+
+// Aircraft database with photos from JetPhotos, descriptions, variant info, and physical specs
+const aircraftDatabase = {
+  "737-800": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-800",
+    variant: "737-800",
+    variantInfo: "The Boeing 737-800 is the best-selling variant of the 737 Next Generation family. Introduced in 1998, it features improved fuel efficiency, extended range, and increased passenger capacity compared to earlier 737 models. This variant became the backbone of many airlines' fleets due to its reliability and operational flexibility.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "A popular narrow-body airliner, the 737-800 is Boeing's best-selling aircraft. Known for its reliability and fuel efficiency, it's a workhorse of short to medium-haul routes.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,765 km (3,582 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737NG 8K2/W": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-800",
+    variant: "737-800 (8K2/W)",
+    variantInfo: "The 737-800 variant with winglet modifications (8K2/W designation). Winglets improve fuel efficiency by reducing wingtip vortices, resulting in up to 5% better fuel economy. This modification became standard on newer 737-800s and can be retrofitted to older aircraft.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737 Next Generation variant with advanced winglet technology, featuring improved fuel efficiency and reduced drag.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,900 km (3,666 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737NG 82R/W": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-800",
+    variant: "737-800 (82R/W)",
+    variantInfo: "Another 737-800 variant designation indicating specific airline configuration and winglet installation. The '82R' typically refers to airline-specific cabin configurations, while 'W' indicates winglet-equipped aircraft. These variants are optimized for specific route requirements.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737 Next Generation variant with airline-specific configuration and winglet technology.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,900 km (3,666 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737NG 783": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-800",
+    variant: "737-800 (783)",
+    variantInfo: "The 737-800 variant with specific airline configuration code '783'. These codes indicate customized cabin layouts, seating arrangements, and service configurations tailored to individual airline requirements. The 783 variant is commonly used by European carriers.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737 Next Generation variant with airline-specific cabin configuration optimized for European routes.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,765 km (3,582 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737NG 8FE/W": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-800",
+    variant: "737-800 (8FE/W)",
+    variantInfo: "A 737-800 variant with '8FE' configuration code and winglet installation. The 'FE' designation often relates to specific engine options or fuel efficiency packages. Combined with winglets, this variant offers optimal fuel economy for long-range narrow-body operations.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737 Next Generation variant optimized for fuel efficiency with advanced winglet technology.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,900 km (3,666 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737-824": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-800",
+    variant: "737-824",
+    variantInfo: "The Boeing 737-824 is a specific variant configured for United Airlines (the '24' suffix indicates United's configuration). This variant features United's signature interior design, specific seating arrangements, and entertainment systems. It's optimized for United's route network and operational requirements.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737-800 variant specifically configured for United Airlines, featuring airline-specific cabin layouts and service configurations.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,765 km (3,582 mi)",
+    capacity: "162-189 passengers"
+  },
+  "A319": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Airbus_A319-111%2C_Lufthansa_AN1857502.jpg/800px-Airbus_A319-111%2C_Lufthansa_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A319",
+    variant: "A319",
+    variantInfo: "The Airbus A319 is the smallest member of the A320 family, designed for shorter routes and smaller airports. Its compact size allows it to operate from runways as short as 1,800 meters, making it ideal for regional routes and challenging airports. Despite its smaller size, it maintains the same cockpit and systems as larger A320 family members, reducing pilot training costs.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1995",
+    description: "Airbus A319, the smallest member of the A320 family. Known for its versatility and ability to operate from shorter runways, making it ideal for regional routes.",
+    length: "33.84 m (111 ft 0 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,850 km (4,257 mi)",
+    capacity: "124-156 passengers"
+  },
+  "A319 133": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Airbus_A319-111%2C_Lufthansa_AN1857502.jpg/800px-Airbus_A319-111%2C_Lufthansa_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A319",
+    variant: "A319-133",
+    variantInfo: "The A319-133 variant features specific engine and configuration options. The '133' designation typically refers to CFM56-5B5/P engines and specific performance characteristics. This variant is popular among airlines requiring optimal fuel efficiency on shorter routes while maintaining the flexibility to operate longer sectors when needed.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1995",
+    description: "Airbus A319 variant with CFM56 engines, optimized for regional and short-haul operations.",
+    length: "33.84 m (111 ft 0 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,850 km (4,257 mi)",
+    capacity: "124-156 passengers"
+  },
+  "AIRBUS A319-111": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Airbus_A319-111%2C_Lufthansa_AN1857502.jpg/800px-Airbus_A319-111%2C_Lufthansa_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A319-111",
+    variant: "A319-111",
+    variantInfo: "The A319-111 is the baseline variant of the A319 family, powered by CFM56-5B5 or IAE V2500-A5 engines. This variant was the first A319 to enter service and established the model's reputation for reliability and operational flexibility. It's particularly valued for its ability to serve both high-density short routes and longer thin routes efficiently.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1995",
+    description: "Airbus A319-111, the baseline variant of the A319 family, known for its operational flexibility and reliability.",
+    length: "33.84 m (111 ft 0 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,850 km (4,257 mi)",
+    capacity: "124-156 passengers"
+  },
+  "A320": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Airbus_A320-214%2C_JetBlue_Airways_AN1857502.jpg/800px-Airbus_A320-214%2C_JetBlue_Airways_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320",
+    variant: "A320",
+    variantInfo: "The Airbus A320 revolutionized single-aisle aircraft with its fly-by-wire technology and commonality across the A320 family. As the baseline model, it strikes an optimal balance between capacity and range. The A320's advanced flight control systems, spacious cabin, and fuel efficiency made it a direct competitor to the Boeing 737 and helped establish Airbus as a major player in the narrow-body market.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320, a revolutionary narrow-body airliner that introduced fly-by-wire technology to single-aisle aircraft. A direct competitor to the Boeing 737.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A321": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Airbus_A321-211%2C_Lufthansa_AN1857502.jpg/800px-Airbus_A321-211%2C_Lufthansa_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A321",
+    variant: "A321",
+    variantInfo: "The Airbus A321 is the stretched variant of the A320 family, offering the highest passenger capacity while maintaining the same cockpit and systems. Its extended fuselage allows airlines to serve high-density routes efficiently. The A321 has become particularly popular for transcontinental routes, offering near wide-body capacity with narrow-body operating costs. Later variants like the A321neo and A321XLR extend its range significantly.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1993",
+    description: "Airbus A321, the largest member of the A320 family. Offers increased capacity while maintaining the efficiency and reliability of the A320 series.",
+    length: "44.51 m (146 ft 0 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "5,950 km (3,698 mi)",
+    capacity: "185-236 passengers"
+  },
+  "A330": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Airbus_A330-343%2C_Cathay_Pacific_AN1857502.jpg/800px-Airbus_A330-343%2C_Cathay_Pacific_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A330",
+    variant: "A330",
+    variantInfo: "The Airbus A330 is a wide-body twin-engine airliner that has become one of the most successful wide-body aircraft in history. It offers exceptional range and fuel efficiency for both medium and long-haul routes. The A330's versatility allows airlines to deploy it on routes ranging from 4,000 to 13,000 km, making it a workhorse for international operations. Its commonality with the A340 (four-engine variant) reduces training and maintenance costs.",
+    baseModel: "Airbus A330 Family",
+    firstFlight: "1992",
+    description: "Airbus A330, a wide-body twin-engine airliner. Known for its long-range capabilities and fuel efficiency, serving both medium and long-haul routes.",
+    length: "58.82 m (193 ft 0 in)",
+    wingspan: "60.3 m (197 ft 10 in)",
+    height: "17.39 m (57 ft 1 in)",
+    maxSpeed: "Mach 0.86 (913 km/h)",
+    range: "13,450 km (8,355 mi)",
+    capacity: "250-440 passengers"
+  },
+  "A350": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Airbus_A350-941%2C_Singapore_Airlines_AN1857502.jpg/800px-Airbus_A350-941%2C_Singapore_Airlines_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A350",
+    variant: "A350",
+    variantInfo: "The Airbus A350 represents the latest generation of wide-body aircraft, featuring over 50% composite materials in its construction. This advanced design reduces weight significantly while maintaining structural integrity. The A350's cabin features larger windows, improved humidity control, and advanced LED lighting systems that adapt to time zones, reducing jet lag. Its fuel efficiency is up to 25% better than previous-generation wide-body aircraft, making it a game-changer for long-haul operations.",
+    baseModel: "Airbus A350 Family",
+    firstFlight: "2013",
+    description: "Airbus A350, a modern wide-body airliner featuring advanced aerodynamics and composite materials. Designed for long-haul routes with exceptional fuel efficiency.",
+    length: "66.8 m (219 ft 2 in)",
+    wingspan: "64.75 m (212 ft 5 in)",
+    height: "17.05 m (55 ft 11 in)",
+    maxSpeed: "Mach 0.89 (945 km/h)",
+    range: "15,000 km (9,321 mi)",
+    capacity: "325-410 passengers"
+  },
+  "787-8": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Boeing_787-8_Dreamliner%2C_ANA_AN1857502.jpg/800px-Boeing_787-8_Dreamliner%2C_ANA_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/787-8",
+    variant: "787-8",
+    variantInfo: "The Boeing 787-8 Dreamliner is the smallest variant of the 787 family, but it revolutionized long-haul travel with its composite construction and advanced systems. Over 50% of the aircraft is made from composite materials, reducing weight and improving fuel efficiency by up to 20% compared to similar-sized aircraft. The 787-8 features larger windows, improved cabin pressure (equivalent to 6,000 feet instead of 8,000 feet), and advanced air filtration systems. Its range allows airlines to open new point-to-point routes previously not economically viable.",
+    baseModel: "Boeing 787 Dreamliner",
+    firstFlight: "2009",
+    description: "Boeing 787 Dreamliner, a revolutionary wide-body aircraft made primarily of composite materials. Features larger windows, improved cabin pressure, and exceptional fuel efficiency.",
+    length: "57 m (186 ft 11 in)",
+    wingspan: "60.12 m (197 ft 3 in)",
+    height: "16.92 m (55 ft 6 in)",
+    maxSpeed: "Mach 0.85 (903 km/h)",
+    range: "13,620 km (8,465 mi)",
+    capacity: "242 passengers"
+  },
+  "Boeing 787 8": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Boeing_787-8_Dreamliner%2C_ANA_AN1857502.jpg/800px-Boeing_787-8_Dreamliner%2C_ANA_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/787-8",
+    variant: "787-8",
+    variantInfo: "The Boeing 787-8 Dreamliner is the smallest variant of the 787 family, but it revolutionized long-haul travel with its composite construction and advanced systems. Over 50% of the aircraft is made from composite materials, reducing weight and improving fuel efficiency by up to 20% compared to similar-sized aircraft. The 787-8 features larger windows, improved cabin pressure (equivalent to 6,000 feet instead of 8,000 feet), and advanced air filtration systems. Its range allows airlines to open new point-to-point routes previously not economically viable.",
+    baseModel: "Boeing 787 Dreamliner",
+    firstFlight: "2009",
+    description: "Boeing 787 Dreamliner, a revolutionary wide-body aircraft made primarily of composite materials. Features larger windows, improved cabin pressure, and exceptional fuel efficiency.",
+    length: "57 m (186 ft 11 in)",
+    wingspan: "60.12 m (197 ft 3 in)",
+    height: "16.92 m (55 ft 6 in)",
+    maxSpeed: "Mach 0.85 (903 km/h)",
+    range: "13,620 km (8,465 mi)",
+    capacity: "242 passengers"
+  },
+  "777-300ER": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Boeing_777-300ER%2C_Emirates_AN1857502.jpg/800px-Boeing_777-300ER%2C_Emirates_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/777-300ER",
+    variant: "777-300ER",
+    variantInfo: "The Boeing 777-300ER (Extended Range) is one of the most successful wide-body aircraft ever built. The 'ER' designation indicates enhanced fuel capacity and improved engines, allowing it to fly longer routes than the standard 777-300. This variant features raked wingtips that improve fuel efficiency and reduce drag. The 777-300ER's reliability and range have made it the preferred choice for many airlines' longest routes, often replacing four-engine aircraft due to its superior fuel efficiency while maintaining similar capacity.",
+    baseModel: "Boeing 777",
+    firstFlight: "2003",
+    description: "Boeing 777-300ER, an extended-range variant of the 777. One of the world's most successful wide-body aircraft, known for its reliability and long-range capabilities.",
+    length: "73.9 m (242 ft 4 in)",
+    wingspan: "64.8 m (212 ft 7 in)",
+    height: "18.5 m (60 ft 8 in)",
+    maxSpeed: "Mach 0.84 (893 km/h)",
+    range: "14,685 km (9,125 mi)",
+    capacity: "365-550 passengers"
+  },
+  "CRJ-900": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bombardier_CRJ900%2C_United_Express_AN1857502.jpg/800px-Bombardier_CRJ900%2C_United_Express_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/CRJ-900",
+    variant: "CRJ-900",
+    variantInfo: "The Bombardier CRJ-900 is the largest variant of the CRJ (Canadair Regional Jet) family, stretching the CRJ-700 design to accommodate more passengers. This regional jet bridges the gap between smaller regional aircraft and mainline narrow-body jets. The CRJ-900 features improved fuel efficiency over earlier CRJ models and offers mainline-style amenities in a regional aircraft. Its extended range allows it to serve routes up to 3,400 km, making it suitable for longer regional routes that don't justify larger aircraft.",
+    baseModel: "Bombardier CRJ Series",
+    firstFlight: "2001",
+    description: "Bombardier CRJ-900, a regional jet designed for short to medium-haul routes. Features improved fuel efficiency and passenger comfort compared to earlier CRJ models.",
+    length: "36.4 m (119 ft 5 in)",
+    wingspan: "24.85 m (81 ft 6 in)",
+    height: "7.51 m (24 ft 8 in)",
+    maxSpeed: "Mach 0.83 (882 km/h)",
+    range: "3,417 km (2,123 mi)",
+    capacity: "76-90 passengers"
+  },
+  "CL-600-2D24": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bombardier_CRJ900%2C_United_Express_AN1857502.jpg/800px-Bombardier_CRJ900%2C_United_Express_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/CL-600-2D24",
+    variant: "CL-600-2D24 (CRJ-900)",
+    variantInfo: "The CL-600-2D24 is Bombardier's official designation for the CRJ-900 regional jet. This variant features the same airframe as the CRJ-900 but with specific certification and configuration details. The '2D24' designation indicates specific engine and systems configurations. This variant is widely used by major airlines for regional operations, offering mainline comfort in a smaller package.",
+    baseModel: "Bombardier CRJ Series",
+    firstFlight: "2001",
+    description: "Bombardier CL-600-2D24 (CRJ-900), a regional jet variant designed for short to medium-haul routes with improved fuel efficiency.",
+    length: "36.4 m (119 ft 5 in)",
+    wingspan: "24.85 m (81 ft 6 in)",
+    height: "7.51 m (24 ft 8 in)",
+    maxSpeed: "Mach 0.83 (882 km/h)",
+    range: "3,417 km (2,123 mi)",
+    capacity: "76-90 passengers"
+  },
+  "CRJ 900": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bombardier_CRJ900%2C_United_Express_AN1857502.jpg/800px-Bombardier_CRJ900%2C_United_Express_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/CRJ-900",
+    variant: "CRJ-900",
+    variantInfo: "The Bombardier CRJ-900 is the largest variant of the CRJ (Canadair Regional Jet) family, stretching the CRJ-700 design to accommodate more passengers. This regional jet bridges the gap between smaller regional aircraft and mainline narrow-body jets.",
+    baseModel: "Bombardier CRJ Series",
+    firstFlight: "2001",
+    description: "Bombardier CRJ-900, a regional jet designed for short to medium-haul routes.",
+    length: "36.4 m (119 ft 5 in)",
+    wingspan: "24.85 m (81 ft 6 in)",
+    height: "7.51 m (24 ft 8 in)",
+    maxSpeed: "Mach 0.83 (882 km/h)",
+    range: "3,417 km (2,123 mi)",
+    capacity: "76-90 passengers"
+  },
+  "ERJ-190": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Embraer_ERJ-190%2C_JetBlue_AN1857502.jpg/800px-Embraer_ERJ-190%2C_JetBlue_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/ERJ-190",
+    variant: "ERJ-190",
+    variantInfo: "The Embraer ERJ-190 (E-Jet E190) is part of Embraer's E-Jet family, designed to compete directly with smaller narrow-body aircraft. Unlike traditional regional jets, the ERJ-190 features a wider cabin (similar to mainline aircraft) with a 2+2 seating configuration, eliminating the middle seat. This design provides mainline comfort in a smaller aircraft, making it popular for routes that don't justify larger jets. The ERJ-190's range and capacity make it ideal for connecting smaller cities to major hubs or serving high-frequency short-haul routes.",
+    baseModel: "Embraer E-Jet Family",
+    firstFlight: "2004",
+    description: "Embraer ERJ-190, a modern regional jet offering mainline comfort in a smaller aircraft. Popular for connecting smaller cities to major hubs.",
+    length: "36.24 m (118 ft 11 in)",
+    wingspan: "28.72 m (94 ft 3 in)",
+    height: "10.28 m (33 ft 9 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "4,260 km (2,648 mi)",
+    capacity: "98-114 passengers"
+  }
+};
+
+// Helper function to find aircraft data (handles variations in model names)
+function getAircraftData(modelName) {
+  // Try exact match first
+  if (aircraftDatabase[modelName]) {
+    return aircraftDatabase[modelName];
+  }
+  
+  // Try to match common variations
+  const normalized = modelName.toUpperCase();
+  for (const [key, value] of Object.entries(aircraftDatabase)) {
+    if (normalized.includes(key.toUpperCase()) || key.toUpperCase().includes(normalized)) {
+      return value;
+    }
+  }
+  
+  // Try partial matches for common patterns
+  if (normalized.includes("737") && (normalized.includes("800") || normalized.includes("8"))) {
+    return aircraftDatabase["737-800"];
+  }
+  if (normalized.includes("A319")) {
+    return aircraftDatabase["A319"];
+  }
+  if (normalized.includes("A320") && !normalized.includes("A321") && !normalized.includes("A319")) {
+    return aircraftDatabase["A320"];
+  }
+  if (normalized.includes("A321")) {
+    return aircraftDatabase["A321"];
+  }
+  if (normalized.includes("787")) {
+    return aircraftDatabase["787-8"];
+  }
+  if (normalized.includes("CRJ") || normalized.includes("CL-600")) {
+    if (normalized.includes("900") || normalized.includes("2D24")) {
+      return aircraftDatabase["CRJ-900"];
+    }
+    if (normalized.includes("700") || normalized.includes("2C10")) {
+      return {
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bombardier_CRJ900%2C_United_Express_AN1857502.jpg/800px-Bombardier_CRJ900%2C_United_Express_AN1857502.jpg",
+        jetphotosUrl: "https://www.jetphotos.com/photo/keyword/CRJ-700",
+        variant: "CRJ-700",
+        variantInfo: "The Bombardier CRJ-700 is a regional jet designed for short to medium-haul routes. It offers improved fuel efficiency and passenger comfort compared to earlier CRJ models.",
+        baseModel: "Bombardier CRJ Series",
+        firstFlight: "1999",
+        description: "Bombardier CRJ-700, a regional jet designed for short to medium-haul routes.",
+        length: "32.5 m (106 ft 8 in)",
+        wingspan: "23.2 m (76 ft 1 in)",
+        height: "7.6 m (24 ft 11 in)",
+        maxSpeed: "Mach 0.83 (882 km/h)",
+        range: "3,650 km (2,268 mi)",
+        capacity: "66-78 passengers"
+      };
+    }
+    return aircraftDatabase["CRJ-900"]; // Default to CRJ-900 for other CRJ variants
+  }
+  if (normalized.includes("ERJ") && normalized.includes("190")) {
+    return aircraftDatabase["ERJ-190"];
+  }
+  if (normalized.includes("777")) {
+    return aircraftDatabase["777-300ER"];
+  }
+  if (normalized.includes("A330")) {
+    return aircraftDatabase["A330"];
+  }
+  if (normalized.includes("A350")) {
+    return aircraftDatabase["A350"];
+  }
+  
+  // Estimate specifications based on model type
+  const modelUpper = modelName.toUpperCase();
+  let estimatedSpecs = {
+    length: "~35 m (~115 ft)",
+    wingspan: "~30 m (~98 ft)",
+    height: "~11 m (~36 ft)",
+    maxSpeed: "Mach 0.82 (~870 km/h)",
+    range: "~5,000 km (~3,100 mi)",
+    capacity: "~150 passengers"
+  };
+  
+  // Estimate based on aircraft family
+  if (modelUpper.includes("737")) {
+    estimatedSpecs = {
+      length: "39.5 m (129 ft 7 in)",
+      wingspan: "35.8 m (117 ft 5 in)",
+      height: "12.5 m (41 ft 2 in)",
+      maxSpeed: "Mach 0.82 (876 km/h)",
+      range: "5,765 km (3,582 mi)",
+      capacity: "162-189 passengers"
+    };
+  } else if (normalized.includes("A319") || (normalized.includes("A320") && !normalized.includes("A321"))) {
+    estimatedSpecs = {
+      length: modelUpper.includes("A319") ? "33.84 m (111 ft 0 in)" : "37.57 m (123 ft 3 in)",
+      wingspan: "34.10 m (111 ft 10 in)",
+      height: "11.76 m (38 ft 7 in)",
+      maxSpeed: "Mach 0.82 (871 km/h)",
+      range: modelUpper.includes("A319") ? "6,850 km (4,257 mi)" : "6,150 km (3,822 mi)",
+      capacity: modelUpper.includes("A319") ? "124-156 passengers" : "150-180 passengers"
+    };
+  } else if (modelUpper.includes("A321")) {
+    estimatedSpecs = {
+      length: "44.51 m (146 ft 0 in)",
+      wingspan: "34.10 m (111 ft 10 in)",
+      height: "11.76 m (38 ft 7 in)",
+      maxSpeed: "Mach 0.82 (871 km/h)",
+      range: "5,950 km (3,698 mi)",
+      capacity: "185-236 passengers"
+    };
+  } else if (modelUpper.includes("787")) {
+    estimatedSpecs = {
+      length: "57 m (186 ft 11 in)",
+      wingspan: "60.12 m (197 ft 3 in)",
+      height: "16.92 m (55 ft 6 in)",
+      maxSpeed: "Mach 0.85 (903 km/h)",
+      range: "13,620 km (8,465 mi)",
+      capacity: "242 passengers"
+    };
+  } else if (modelUpper.includes("777")) {
+    estimatedSpecs = {
+      length: modelUpper.includes("300") ? "73.9 m (242 ft 4 in)" : "63.7 m (209 ft 1 in)",
+      wingspan: "64.8 m (212 ft 7 in)",
+      height: "18.5 m (60 ft 8 in)",
+      maxSpeed: "Mach 0.84 (893 km/h)",
+      range: modelUpper.includes("300") ? "14,685 km (9,125 mi)" : "9,695 km (6,025 mi)",
+      capacity: modelUpper.includes("300") ? "365-550 passengers" : "314-396 passengers"
+    };
+  } else if (modelUpper.includes("A330")) {
+    estimatedSpecs = {
+      length: "58.82 m (193 ft 0 in)",
+      wingspan: "60.3 m (197 ft 10 in)",
+      height: "17.39 m (57 ft 1 in)",
+      maxSpeed: "Mach 0.86 (913 km/h)",
+      range: "13,450 km (8,355 mi)",
+      capacity: "250-440 passengers"
+    };
+  } else if (modelUpper.includes("A350")) {
+    estimatedSpecs = {
+      length: "66.8 m (219 ft 2 in)",
+      wingspan: "64.75 m (212 ft 5 in)",
+      height: "17.05 m (55 ft 11 in)",
+      maxSpeed: "Mach 0.89 (945 km/h)",
+      range: "15,000 km (9,321 mi)",
+      capacity: "325-410 passengers"
+    };
+  } else if (modelUpper.includes("CRJ") || modelUpper.includes("CL-600")) {
+    if (modelUpper.includes("900") || modelUpper.includes("2D24")) {
+      estimatedSpecs = {
+        length: "36.4 m (119 ft 5 in)",
+        wingspan: "24.85 m (81 ft 6 in)",
+        height: "7.51 m (24 ft 8 in)",
+        maxSpeed: "Mach 0.83 (882 km/h)",
+        range: "3,417 km (2,123 mi)",
+        capacity: "76-90 passengers"
+      };
+    } else if (modelUpper.includes("700") || modelUpper.includes("2C10")) {
+      estimatedSpecs = {
+        length: "32.5 m (106 ft 8 in)",
+        wingspan: "23.2 m (76 ft 1 in)",
+        height: "7.6 m (24 ft 11 in)",
+        maxSpeed: "Mach 0.83 (882 km/h)",
+        range: "3,650 km (2,268 mi)",
+        capacity: "66-78 passengers"
+      };
+    } else {
+      estimatedSpecs = {
+        length: "26.8 m (87 ft 10 in)",
+        wingspan: "21.2 m (69 ft 7 in)",
+        height: "6.2 m (20 ft 4 in)",
+        maxSpeed: "Mach 0.81 (860 km/h)",
+        range: "3,046 km (1,893 mi)",
+        capacity: "50 passengers"
+      };
+    }
+  } else if (modelUpper.includes("ERJ") && modelUpper.includes("190")) {
+    estimatedSpecs = {
+      length: "36.24 m (118 ft 11 in)",
+      wingspan: "28.72 m (94 ft 3 in)",
+      height: "10.28 m (33 ft 9 in)",
+      maxSpeed: "Mach 0.82 (871 km/h)",
+      range: "4,260 km (2,648 mi)",
+      capacity: "98-114 passengers"
+    };
+  } else if (modelUpper.includes("ERJ") && modelUpper.includes("170")) {
+    estimatedSpecs = {
+      length: "29.9 m (98 ft 1 in)",
+      wingspan: "26.0 m (85 ft 4 in)",
+      height: "9.7 m (31 ft 10 in)",
+      maxSpeed: "Mach 0.82 (871 km/h)",
+      range: "3,889 km (2,417 mi)",
+      capacity: "70-80 passengers"
+    };
+  } else if (modelUpper.includes("ERJ") && modelUpper.includes("175")) {
+    estimatedSpecs = {
+      length: "31.7 m (104 ft 0 in)",
+      wingspan: "26.0 m (85 ft 4 in)",
+      height: "9.7 m (31 ft 10 in)",
+      maxSpeed: "Mach 0.82 (871 km/h)",
+      range: "3,704 km (2,302 mi)",
+      capacity: "76-88 passengers"
+    };
+  } else {
+    // Generic estimates for unknown commercial aircraft
+    estimatedSpecs = {
+      length: "~35 m (~115 ft)",
+      wingspan: "~30 m (~98 ft)",
+      height: "~11 m (~36 ft)",
+      maxSpeed: "Mach 0.82 (~870 km/h)",
+      range: "~5,000 km (~3,100 mi)",
+      capacity: "~150 passengers"
+    };
+  }
+  
+  return {
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    jetphotosUrl: `https://www.jetphotos.com/photo/keyword/${encodeURIComponent(modelName)}`,
+    variant: modelName,
+    variantInfo: "A commercial airliner serving routes worldwide. Variant specifications and configurations may vary by airline and operational requirements.",
+    baseModel: "Commercial Airliner",
+    firstFlight: "",
+    description: "A commercial airliner serving routes worldwide. Specifications vary by model variant.",
+    ...estimatedSpecs
+  };
+}
+
+// Plane card for model name hover
+let planeCard = null;
+
+function showPlaneCard(event, d, dateInfo, modelInfoLookup) {
+  // Remove existing card if it exists
+  if (planeCard) {
+    planeCard.remove();
+  }
+  
+  // Create new card
+  planeCard = d3.select("body").append("div")
+    .attr("class", "plane-card")
+    .style("position", "fixed")
+    .style("background", "#ffffff")
+    .style("color", "#000000")
+    .style("padding", "0")
+    .style("border-radius", "6px")
+    .style("font-size", "12px")
+    .style("pointer-events", "auto")
+    .style("z-index", "99999")
+    .style("box-shadow", "0 8px 24px rgba(0,0,0,0.3)")
+    .style("border", "2px solid #000000")
+    .style("opacity", "1")
+    .style("display", "block")
+    .style("visibility", "visible")
+      .style("width", "280px")
+      .style("max-height", "60vh")
+    .style("overflow-y", "auto")
+    .style("overflow-x", "hidden")
+    .style("font-family", "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif");
+
+  const modelInfo = modelInfoLookup.get(d.model) || {
+    model: d.model,
+    manufacturer: "Unknown",
+    typecode: "",
+    operator: "",
+    engines: "",
+    built: ""
+  };
+
+  const aircraftData = getAircraftData(d.model);
+
+  const cardContent = `
+    <div style="width: 100%; background: #f8fafc; padding: 10px 12px; border-bottom: 2px solid #cbd5e1;">
+      <div style="font-weight: 700; font-size: 15px; color: #000000; margin-bottom: 3px; line-height: 1.2;">
+        ${d.model}
+      </div>
+      <div style="font-size: 10px; color: #334155; font-weight: 500;">
+        <strong style="color: #000000;">${modelInfo.manufacturer}</strong>
+      </div>
+    </div>
+    
+    <div style="padding: 10px 12px;">
+      <div style="margin-bottom: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; background: #f8fafc;">
+        <img src="${aircraftData.image}" 
+             alt="${d.model}" 
+             style="width: 100%; height: auto; display: block; max-height: 120px; min-height: 100px; object-fit: cover; background: linear-gradient(135deg, #e2e8f0, #cbd5e1);"
+             onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <div style="display: none; padding: 30px 12px; text-align: center; color: #1e293b; background: linear-gradient(135deg, #f1f5f9, #e2e8f0);">
+          <div style="font-size: 32px; margin-bottom: 4px;">✈️</div>
+          <div style="font-size: 12px; font-weight: 700; color: #000000;">${d.model}</div>
+        </div>
+      </div>
+      
+      ${aircraftData.variantInfo ? `
+        <div style="margin-bottom: 10px; padding: 8px; background: #eff6ff; border-left: 3px solid #2563eb; border-radius: 4px;">
+          <div style="font-size: 10px; color: #1e293b; line-height: 1.4; font-weight: 400;">
+            ${aircraftData.variantInfo.substring(0, 150)}${aircraftData.variantInfo.length > 150 ? '...' : ''}
+          </div>
+        </div>
+      ` : ''}
+      
+      <div style="border-top: 1px solid #cbd5e1; padding-top: 10px;">
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0 6px;">
+          <tr>
+            <td style="padding: 6px 8px; background: #f1f5f9; border-radius: 4px; width: 50%; border: 1px solid #cbd5e1;">
+              <div style="font-size: 8px; color: #475569; margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">Length</div>
+              <div style="font-size: 10px; font-weight: 700; color: #000000;">${aircraftData.length}</div>
+            </td>
+            <td style="padding: 6px 8px; padding-left: 6px; background: #f1f5f9; border-radius: 4px; border: 1px solid #cbd5e1;">
+              <div style="font-size: 8px; color: #475569; margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">Wingspan</div>
+              <div style="font-size: 10px; font-weight: 700; color: #000000;">${aircraftData.wingspan}</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 8px; background: #f1f5f9; border-radius: 4px; border: 1px solid #cbd5e1;" colspan="2">
+              <div style="font-size: 8px; color: #475569; margin-bottom: 2px; font-weight: 600; text-transform: uppercase;">Capacity</div>
+              <div style="font-size: 10px; font-weight: 700; color: #000000;">${aircraftData.capacity}</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Calculate position to keep card on screen
+  const cardWidth = 280;
+  const cardHeight = 400; // approximate max height
+  const padding = 10;
+  
+  let leftPos = event.pageX + padding;
+  let topPos = event.pageY - 10;
+  
+  // Adjust if card would go off right edge
+  if (leftPos + cardWidth > window.innerWidth - padding) {
+    leftPos = event.pageX - cardWidth - padding;
+  }
+  
+  // Adjust if card would go off bottom edge
+  if (topPos + cardHeight > window.innerHeight - padding) {
+    topPos = window.innerHeight - cardHeight - padding;
+  }
+  
+  // Ensure card doesn't go off top or left
+  if (topPos < padding) topPos = padding;
+  if (leftPos < padding) leftPos = padding;
+  
+  planeCard
+    .html(cardContent)
+    .style("left", leftPos + "px")
+    .style("top", topPos + "px")
+    .style("opacity", "1")
+    .style("display", "block")
+    .style("visibility", "visible");
+}
+
+function hidePlaneCard() {
+  if (planeCard) {
+    planeCard
+      .style("opacity", "0")
+      .style("visibility", "hidden")
+      .style("display", "none");
   }
 }
