@@ -118,15 +118,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   scroller.addEventListener(
     "wheel",
     (e) => {
+      // If the wheel event starts over a visualization, do NOT change page
+      if (e.target.closest(".vis-canvas")) {
+        return; // let the chart handle zoom/pan instead
+      }
+
       if (lock) return;
       lock = true;
+
       const delta = e.deltaY || e.deltaX;
       if (delta > 0) snapTo(App.index + 1);
       else if (delta < 0) snapTo(App.index - 1);
+
       setTimeout(() => (lock = false), PAGE_DELAY);
     },
     { passive: true }
   );
+
+  // Prevent outer horizontal paging when zooming inside a visualization
+  document.querySelectorAll(".vis-canvas").forEach((canvas) => {
+    canvas.addEventListener(
+      "wheel",
+      (e) => {
+        // Let the chart handle this wheel event (e.g., zoom)
+        e.stopPropagation();
+        // Optional: prevent the browser from also scrolling vertically
+        // e.preventDefault();
+      },
+      { passive: true } // set to false if you use preventDefault()
+    );
+  });
+
 
   window.addEventListener("keydown", (e) => {
     if (["ArrowRight", "PageDown", "Space"].includes(e.key)) {
