@@ -1,116 +1,61 @@
 let calendarMap;
 
-let monthlyDataVis2 = [];
-
-//start application by loading the data
 loadDataVis2();
 
-
-
 function loadDataVis2() {
-  //load each months data
-  var promise1 = d3.csv("data/2019_01_dailytotals.csv", row => {
+  
 
-    //fixing utc to est time zone bug
-    var dateParts = row.day.split('-');
-    row.day = new Date(+dateParts[0], +dateParts[1] - 1, +dateParts[2]);
-    row.total_flights = +row.unique_icao24_count;
+  //working with yearly data instead of monthly data to fit peer feedback
+  const summaryFiles = [
 
-    return row = {
+    //four years all available data, one year before, two years technically during, and one year afterwards 
+    {file: "2019_monthly_summary.csv", year: 2019},
+    {file: "2020_monthly_summary.csv", year: 2020},
+    {file: "2021_monthly_summary.csv", year: 2021},
+    {file: "2022_monthly_summary.csv", year: 2022}
 
-      day: row.day,
-      total_flights: row.total_flights
-      
-    };
+  ];
 
-  });
+  //setting up here of the array to load all data from files
+  let promises = summaryFiles.map(fileInfo => {
 
-  //load each months data
-  var promise2 = d3.csv("data/2020_04_dailytotals.csv", row => {
+    return d3.csv(`data/${fileInfo.file}`, row => {
 
-    //fixing utc to est time zone bug
-    var dateParts = row.day.split('-');
-    row.day = new Date(+dateParts[0], +dateParts[1] - 1, +dateParts[2]);
-    row.total_flights = +row.unique_icao24_count;
+      return {
 
-    return row = {
+        month: +row.month,
+        monthName: row.month_name,
+        year: +row.year,
+        total_flights: +row.total_flights,
+        unique_aircraft: +row.unique_aircraft,
+        avg_daily_flights: +row.avg_daily_flights
 
-      day: row.day,
-      total_flights: row.total_flights
-      
-    };
+      };
 
-  });
+    }).then(data => {
 
-  //load each months data
-  var promise3 = d3.csv("data/2022_12_dailytotals.csv", row => {
+      return {
 
-    //fixing utc to est time zone bug
-    var dateParts = row.day.split('-');
-    row.day = new Date(+dateParts[0], +dateParts[1] - 1, +dateParts[2]);
-    row.total_flights = +row.unique_icao24_count;
+        //double check data is sorted by the integer value for each month (1 - 12)
+        year: fileInfo.year,
+        data: data.sort((a, b) => a.month - b.month)
 
-    return row = {
+      };
 
-      day: row.day,
-      total_flights: row.total_flights
-      
-    };
+    });
 
   });
 
-  Promise.all([promise1, promise2, promise3]).then((data1) => {
 
-    monthlyDataVis2.push({ month: "2019_01", data: data1[0], label: "January 2019" });
-    monthlyDataVis2.push({ month: "2020_04", data: data1[1], label: "April 2020" });
-    monthlyDataVis2.push({ month: "2022_12", data: data1[2], label: "December 2022" });
-    console.log("All monthly data loaded for Vis2:", monthlyDataVis2);
+  //now handle all the loaded data using the promises array
+  Promise.all(promises).then(allYearData => {
+    
 
-    createMonthSelectorVis2();
-
-    //Initialize the Calendar Map with January 2019 data
-    calendarMap = new CalendarMap("visualization-2", monthlyDataVis2[0]);
+    // Initialize the Calendar Map with all year data
+    calendarMap = new CalendarMap("visualization-2", allYearData);
     calendarMap.loadFlights();
 
   });
-
-}
-
-
-function createMonthSelectorVis2() {
-
-       
-    var buttonContainer = d3.select("#visualization-2").append("div")
-        .attr("class", "month-selector")
-        .style("text-align", "center");
-    
-    var buttons = buttonContainer.selectAll(".month-button")
-        .data(monthlyDataVis2)
-        .enter()
-        .append("button")
-        .attr("class", "month-button")
-        .style("margin", "5px")
-        .style("padding", "10px")
-        .style("border", "2px solid #000000ff")
-        .style("border-radius", "10px")
-        .style("background", "#1f1f1fff")
-        .style("color", "#ffffffff")
-        .style("font-size", "14px")
-        .text(d => d.label)
-
-        //handiling of clicking button
-        .on("click", function(event, d) {
-
-          d3.select("#visualization-2").select("svg").remove();
-          buttons.style("background", "#1f1f1fff"); 
-          d3.select(this).style("background", "#307c32ff");
-          
-
-          calendarMap = new CalendarMap("visualization-2", d);
-          calendarMap.loadFlights();
-
-        });     
-      
 }
 
 
