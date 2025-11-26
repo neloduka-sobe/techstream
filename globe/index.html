@@ -193,6 +193,8 @@
   <div id="map3" class="multi-map"></div>
 </div>
 
+<div id="legend" style="position: absolute; top: 790px; left: 50%; transform: translateX(-50%); text-align: center; font-family: sans-serif; width: 1000px;"></div>
+
 <div id="timeline">
   <svg id="sliderSvg" width="960" height="60"></svg>
 </div>
@@ -342,6 +344,9 @@
           //d3.select("#continueStoryButton").style("display", "inline-block");
           // Attach event listener
           d3.select("#continueStoryButton").on("click", handleContinueStory);
+
+          // Hide the legend
+          d3.select("#legend").style("display", "none");
         }
       }, 500); // Check every half second
 
@@ -561,6 +566,7 @@
       } else {
           // All extended story screens finished
           d3.select("#storyOverlay").style("display", "none");
+          d3.select("#legend").style("display", "block");
           prefixDropdown.property("value", "FDX"); // Select Fedex
           prefixDropdown.dispatch("change"); // Trigger change event
           // reset timeline to 00:00
@@ -1178,6 +1184,7 @@
 
     updatePrefixChart(uiData);
     updateCountryChart(uiData);
+    updateLegend(uiData);
 
     globeInstances.forEach(globe => {
       globe.update(minutes);
@@ -1188,15 +1195,33 @@
     const svg2 = d3.select("#xxx").select("svg");
     // svg2.selectAll("*").remove(); // Removed brute-force clear
 
-    if (!uiData || !uiData.topPrefixes || uiData.topPrefixes.length === 0) {
+    if (!uiData || !uiData.prefixCounts) {
       // Handle no data case by clearing existing elements and showing message
       svg2.selectAll("*").remove();
       svg2.attr("height", 50).append("text").attr("x", 10).attr("y", 20).attr("font-size", "12px").text("No flight data for this time.");
       return;
     };
 
-    const topPrefixes = uiData.topPrefixes;
+    let topPrefixes;
     const prefixCounts = uiData.prefixCounts;
+
+    if (activeCountryHighlight) {
+        const countryPrefixes = Object.keys(faaLookup).filter(prefix => {
+            return faaLookup[prefix].Country === activeCountryHighlight;
+        });
+
+        const prefixCountsInCountry = {};
+        countryPrefixes.forEach(prefix => {
+            if (prefixCounts[prefix]) {
+                prefixCountsInCountry[prefix] = prefixCounts[prefix];
+            }
+        });
+
+        topPrefixes = Object.keys(prefixCountsInCountry)
+            .sort((a, b) => prefixCountsInCountry[b] - prefixCountsInCountry[a]);
+    } else {
+        topPrefixes = uiData.topPrefixes || [];
+    }
 
     // Combine with always-include list and sort
     const allPrefixes = [...new Set([...alwaysIncludePrefixes, ...topPrefixes])].sort();
@@ -1410,6 +1435,67 @@
       xAxisGroup = barGroup.append("g").attr("class", "x-axis");
     }
     xAxisGroup.attr("transform", `translate(0,${barHeight})`).call(d3.axisBottom(xScale).ticks(4));
+  }
+
+  function updateLegend(uiData) {
+    const legendContainer = d3.select("#legend");
+    legendContainer.html(""); // Clear previous legend
+
+    if (!uiData || !uiData.prefixCounts) {
+        return;
+    }
+
+    let topPrefixes;
+
+    if (activeCountryHighlight) {
+        const countryPrefixes = Object.keys(faaLookup).filter(prefix => {
+            return faaLookup[prefix].Country === activeCountryHighlight;
+        });
+
+        const prefixCountsInCountry = {};
+        countryPrefixes.forEach(prefix => {
+            if (uiData.prefixCounts[prefix]) {
+                prefixCountsInCountry[prefix] = uiData.prefixCounts[prefix];
+            }
+        });
+
+        topPrefixes = Object.keys(prefixCountsInCountry)
+            .sort((a, b) => prefixCountsInCountry[b] - prefixCountsInCountry[a]);
+    } else {
+        topPrefixes = uiData.topPrefixes || [];
+    }
+
+    topPrefixes = topPrefixes.slice(0, 10); // Limit to 10 to avoid overflow
+
+    const legendTitle = legendContainer.append("div")
+        .style("font-weight", "bold")
+        .style("margin-bottom", "5px")
+        .text(activeCountryHighlight ? `Top Airlines in ${activeCountryHighlight}` : "Top Airlines");
+
+    const legendItems = legendContainer.selectAll(".legend-item")
+        .data(topPrefixes)
+        .enter()
+        .append("div")
+        .attr("class", "legend-item")
+        .style("display", "inline-flex")
+        .style("align-items", "center")
+        .style("margin-right", "15px")
+        .style("margin-bottom", "5px");
+
+    legendItems.append("svg")
+        .attr("width", 12)
+        .attr("height", 12)
+        .style("flex-shrink", "0")
+        .append("circle")
+        .attr("cx", 6)
+        .attr("cy", 6)
+        .attr("r", 6)
+        .style("fill", d => colorScale(d));
+
+    legendItems.append("span")
+        .style("font-size", "12px")
+        .style("margin-left", "5px")
+        .text(d => faaLookup[d] ? faaLookup[d].Company : d);
   }
 
   function animateCountry(countryName) {
