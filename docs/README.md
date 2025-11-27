@@ -2,6 +2,8 @@
 
 This project consists of a series of data visualizations analyzing global flight data. Namely, we show how the airline industry was severly disrupted by the COVID-19 pandemic, and how it later recovered.
 
+By @Arthur0033, @asterling, @2003leopan, @johnchakkour and @
+
 ## Instructions
 * Run Live Server on `index.html` to see the visualization
 * Assuming we are using the 5 selected visualizations in the process book
