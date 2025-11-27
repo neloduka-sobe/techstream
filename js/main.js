@@ -15,7 +15,7 @@ const App = {
     // section indices for: Intro, Emissions, Total Flights, Aircraft, Globe, Conclusion
     // NOTE: we’ll fix the last one to point to the conclusion after sections are known
     indices: [0, 2, 4, 6, 8, null],
-    labels:  ["Intro", "Emissions", "Flights", "Aircraft", "Globe", "Conclusion"]
+    labels: ["Intro", "Emissions", "Flights", "Aircraft", "Globe", "Conclusion"]
   }
 };
 
@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateTimeline(); // reflect immediately
     updateArrows();
   }
-  const leftArrow  = document.getElementById("nav-left");
+  const leftArrow = document.getElementById("nav-left");
   const rightArrow = document.getElementById("nav-right");
 
   function updateArrows() {
@@ -118,34 +118,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   scroller.addEventListener(
     "wheel",
     (e) => {
-      // If the wheel event starts over a visualization, do NOT change page
+      // 1) Never page if the event starts over a visualization
       if (e.target.closest(".vis-canvas")) {
-        return; // let the chart handle zoom/pan instead
+        return;
+      }
+
+      const { deltaX, deltaY } = e;
+
+      // 2) Only treat this as paging if it's primarily horizontal
+      if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+        // vertical-ish scrolling → ignore for paging
+        return;
       }
 
       if (lock) return;
       lock = true;
 
-      const delta = e.deltaY || e.deltaX;
-      if (delta > 0) snapTo(App.index + 1);
-      else if (delta < 0) snapTo(App.index - 1);
+      if (deltaX > 0) {
+        snapTo(App.index + 1);
+      } else if (deltaX < 0) {
+        snapTo(App.index - 1);
+      }
 
       setTimeout(() => (lock = false), PAGE_DELAY);
     },
     { passive: true }
   );
 
-  // Prevent outer horizontal paging when zooming inside a visualization
+
+  // Prevent the outer scroller AND browser from moving when zooming inside a visualization
   document.querySelectorAll(".vis-canvas").forEach((canvas) => {
     canvas.addEventListener(
       "wheel",
       (e) => {
-        // Let the chart handle this wheel event (e.g., zoom)
-        e.stopPropagation();
-        // Optional: prevent the browser from also scrolling vertically
-        // e.preventDefault();
+        // Let D3 zoom on the inner <svg> handle this, but:
+        e.stopPropagation();   // do NOT bubble to #scroller
+        e.preventDefault();    // do NOT scroll the page / container
       },
-      { passive: true } // set to false if you use preventDefault()
+      { passive: false }        // MUST be false or preventDefault() is ignored
     );
   });
 
@@ -218,7 +228,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateArrows();
   });
 
-  window.addEventListener("resize", () => updateTimeline()); // keep plane on track
+  window.addEventListener("resize", () => {
+    updateTimeline(); // keep plane on track
+    snapTo(App.index); // re-snap to current section to keep it centered
+  });
 
   /** Build ticks + labels for the bottom progress line (based on milestones) */
   function buildTimeline() {
