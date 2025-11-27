@@ -101,7 +101,7 @@ function initFuelGaugeInteractivity() {
     
     //Adjust so there is a minimum size, with additional responsive ness if screen sizes dont fit.
     const svgWidth = Math.min(800, window.innerWidth - 50); 
-    const svgHeight = Math.min(550, window.innerHeight * 0.8); 
+    const svgHeight = Math.min(500, window.innerHeight * 0.8); 
     
     //wrapper that contains the space for the visualization and the subitite, will make it easier to transfer once code with others is merged
     wrapperDiv = container.append('div')
