@@ -198,7 +198,7 @@
   <div id="map3" class="multi-map"></div>
 </div>
 
-<div id="legend" style="position: absolute; top: 790px; left: 50%; transform: translateX(-50%); text-align: center; font-family: sans-serif; width: 1000px;"></div>
+<div id="legend" style="position: absolute; top: 700px; left: 50%; transform: translateX(-50%); text-align: center; font-family: sans-serif; width: 1000px;"></div>
 
 <div id="timeline">
   <svg id="sliderSvg" width="960" height="60"></svg>
@@ -608,19 +608,22 @@
               d3.select("body").append("button")
                 .attr("id", "continueStoryButton")
                 .style("position", "absolute")
-                .style("top", "740px")
+                .style("top", "700px")
                 .style("left", "50%")
                 .style("transform", "translateX(-50%)")
                 .style("padding", "10px 20px")
                 .style("font-size", "16px")
                 .style("cursor", "pointer")
                 .text("Continue Story");
+              d3.select("#legend").style("display", "none");
 
 
           //d3.select("#continueStoryButton").style("display", "inline-block");
           // Attach event listener
           d3.select("#continueStoryButton").on("click", () => {
               // Show dropdowns and labels
+              d3.select("#legend").style("display", "block");
+              d3.select("#legend").style("top", "790px");
               d3.select("#continueStoryButton").remove(); // Remove the button
               d3.select("#prefixDropdown").style("display", "block");
               d3.select("#countryDropdown").style("display", "block");
