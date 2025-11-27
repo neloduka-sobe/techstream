@@ -1190,6 +1190,66 @@ const aircraftDatabase = {
     range: "5,765 km (3,582 mi)",
     capacity: "162-189 passengers"
   },
+  "737 823": {
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_CyyvXbs40EemxvZIVF3mnNUUxpugRU-WqQ&s",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-823",
+    variant: "737-823",
+    variantInfo: "The Boeing 737-823 is a specific variant of the 737-800 family. The '823' designation indicates specific airline configuration and engine options. This variant features airline-specific cabin layouts, seating arrangements, and service configurations optimized for specific route requirements.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737-823, a variant of the 737-800 family with airline-specific configuration. Features improved fuel efficiency and operational flexibility.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,765 km (3,582 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737-823": {
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_CyyvXbs40EemxvZIVF3mnNUUxpugRU-WqQ&s",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-823",
+    variant: "737-823",
+    variantInfo: "The Boeing 737-823 is a specific variant of the 737-800 family. The '823' designation indicates specific airline configuration and engine options. This variant features airline-specific cabin layouts, seating arrangements, and service configurations optimized for specific route requirements.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737-823, a variant of the 737-800 family with airline-specific configuration. Features improved fuel efficiency and operational flexibility.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,765 km (3,582 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737 7H4": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/438/438097_big.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-7H4",
+    variant: "737-7H4",
+    variantInfo: "The Boeing 737-7H4 is a specific variant of the 737-700 family. The '7H4' designation indicates specific airline configuration and engine options. The 737-700 is a shorter variant of the 737 Next Generation family, offering improved fuel efficiency and range compared to earlier 737 models while maintaining the same cockpit and systems as larger 737 variants.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737-7H4, a variant of the 737-700 family with airline-specific configuration. Features improved fuel efficiency and operational flexibility.",
+    length: "33.6 m (110 ft 4 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "6,230 km (3,871 mi)",
+    capacity: "126-149 passengers"
+  },
+  "737-7H4": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/438/438097_big.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-7H4",
+    variant: "737-7H4",
+    variantInfo: "The Boeing 737-7H4 is a specific variant of the 737-700 family. The '7H4' designation indicates specific airline configuration and engine options. The 737-700 is a shorter variant of the 737 Next Generation family, offering improved fuel efficiency and range compared to earlier 737 models while maintaining the same cockpit and systems as larger 737 variants.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737-7H4, a variant of the 737-700 family with airline-specific configuration. Features improved fuel efficiency and operational flexibility.",
+    length: "33.6 m (110 ft 4 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "6,230 km (3,871 mi)",
+    capacity: "126-149 passengers"
+  },
   "A319": {
     image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Airbus_A319-111%2C_Lufthansa_AN1857502.jpg/800px-Airbus_A319-111%2C_Lufthansa_AN1857502.jpg",
     jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A319",
@@ -1250,6 +1310,126 @@ const aircraftDatabase = {
     range: "6,150 km (3,822 mi)",
     capacity: "150-180 passengers"
   },
+  "A320 214": {
+    image: "https://cdn.plnspttrs.net/33574/rp-c4101-cebu-pacific-airbus-a320-214-wl_PlanespottersNet_1829306_ab010bfbb3_o.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-214",
+    variant: "A320-214",
+    variantInfo: "The Airbus A320-214 is a specific variant of the A320 family featuring CFM56-5B4/P engines. The '214' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A320's revolutionary fly-by-wire technology and commonality with other A320 family members, while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-214, a variant of the A320 family with CFM56 engines. Features the same advanced fly-by-wire technology and fuel efficiency as the baseline A320.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A320-214": {
+    image: "https://cdn.plnspttrs.net/33574/rp-c4101-cebu-pacific-airbus-a320-214-wl_PlanespottersNet_1829306_ab010bfbb3_o.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-214",
+    variant: "A320-214",
+    variantInfo: "The Airbus A320-214 is a specific variant of the A320 family featuring CFM56-5B4/P engines. The '214' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A320's revolutionary fly-by-wire technology and commonality with other A320 family members, while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-214, a variant of the A320 family with CFM56 engines. Features the same advanced fly-by-wire technology and fuel efficiency as the baseline A320.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A320 214SL": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/447516/medium-large.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-214SL",
+    variant: "A320-214SL",
+    variantInfo: "The Airbus A320-214SL is a specific variant of the A320 family. The '214' designation indicates CFM56-5B4/P engines, while 'SL' refers to 'Sharklet' wingtip devices that improve fuel efficiency. This variant combines specific engine options with advanced wingtip technology to optimize fuel consumption and reduce emissions.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-214SL, a variant of the A320 family with CFM56 engines and Sharklet wingtip devices for improved fuel efficiency.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A320-214SL": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/447516/medium-large.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-214SL",
+    variant: "A320-214SL",
+    variantInfo: "The Airbus A320-214SL is a specific variant of the A320 family. The '214' designation indicates CFM56-5B4/P engines, while 'SL' refers to 'Sharklet' wingtip devices that improve fuel efficiency. This variant combines specific engine options with advanced wingtip technology to optimize fuel consumption and reduce emissions.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-214SL, a variant of the A320 family with CFM56 engines and Sharklet wingtip devices for improved fuel efficiency.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A320 232": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/486385/medium-large.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-232",
+    variant: "A320-232",
+    variantInfo: "The Airbus A320-232 is a specific variant of the A320 family featuring IAE V2500-A5 engines. The '232' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A320's revolutionary fly-by-wire technology and commonality with other A320 family members, while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-232, a variant of the A320 family with IAE V2500 engines. Features the same advanced fly-by-wire technology and fuel efficiency as the baseline A320.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A320-232": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/486385/medium-large.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-232",
+    variant: "A320-232",
+    variantInfo: "The Airbus A320-232 is a specific variant of the A320 family featuring IAE V2500-A5 engines. The '232' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A320's revolutionary fly-by-wire technology and commonality with other A320 family members, while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-232, a variant of the A320 family with IAE V2500 engines. Features the same advanced fly-by-wire technology and fuel efficiency as the baseline A320.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A320 231": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/434/434243_big.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-231",
+    variant: "A320-231",
+    variantInfo: "The Airbus A320-231 is a specific variant of the A320 family featuring IAE V2500-A1 engines. The '231' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A320's revolutionary fly-by-wire technology and commonality with other A320 family members, while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-231, a variant of the A320 family with IAE V2500 engines. Features the same advanced fly-by-wire technology and fuel efficiency as the baseline A320.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
+  "A320-231": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/434/434243_big.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A320-231",
+    variant: "A320-231",
+    variantInfo: "The Airbus A320-231 is a specific variant of the A320 family featuring IAE V2500-A1 engines. The '231' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A320's revolutionary fly-by-wire technology and commonality with other A320 family members, while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1987",
+    description: "Airbus A320-231, a variant of the A320 family with IAE V2500 engines. Features the same advanced fly-by-wire technology and fuel efficiency as the baseline A320.",
+    length: "37.57 m (123 ft 3 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "6,150 km (3,822 mi)",
+    capacity: "150-180 passengers"
+  },
   "A321": {
     image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Airbus_A321-211%2C_Lufthansa_AN1857502.jpg/800px-Airbus_A321-211%2C_Lufthansa_AN1857502.jpg",
     jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A321",
@@ -1258,6 +1438,36 @@ const aircraftDatabase = {
     baseModel: "Airbus A320 Family",
     firstFlight: "1993",
     description: "Airbus A321, the largest member of the A320 family. Offers increased capacity while maintaining the efficiency and reliability of the A320 series.",
+    length: "44.51 m (146 ft 0 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "5,950 km (3,698 mi)",
+    capacity: "185-236 passengers"
+  },
+  "A321 231": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/434/434243_big.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A321-231",
+    variant: "A321-231",
+    variantInfo: "The Airbus A321-231 is a specific variant of the A321 family featuring IAE V2500-A5 engines. The '231' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A321's extended fuselage and high passenger capacity while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1993",
+    description: "Airbus A321-231, a variant of the A321 family with IAE V2500 engines. Features the same extended fuselage and high capacity as the baseline A321.",
+    length: "44.51 m (146 ft 0 in)",
+    wingspan: "34.10 m (111 ft 10 in)",
+    height: "11.76 m (38 ft 7 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "5,950 km (3,698 mi)",
+    capacity: "185-236 passengers"
+  },
+  "A321-231": {
+    image: "https://d3trj3zqmkebtg.cloudfront.net/pics/434/434243_big.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A321-231",
+    variant: "A321-231",
+    variantInfo: "The Airbus A321-231 is a specific variant of the A321 family featuring IAE V2500-A5 engines. The '231' designation indicates specific engine and configuration options optimized for various airline requirements. This variant maintains the A321's extended fuselage and high passenger capacity while offering specific performance characteristics suited to different route profiles.",
+    baseModel: "Airbus A320 Family",
+    firstFlight: "1993",
+    description: "Airbus A321-231, a variant of the A321 family with IAE V2500 engines. Features the same extended fuselage and high capacity as the baseline A321.",
     length: "44.51 m (146 ft 0 in)",
     wingspan: "34.10 m (111 ft 10 in)",
     height: "11.76 m (38 ft 7 in)",
@@ -1355,8 +1565,23 @@ const aircraftDatabase = {
     range: "3,417 km (2,123 mi)",
     capacity: "76-90 passengers"
   },
-  "CL-600-2D24": {
+  "CL-600-2C10": {
     image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bombardier_CRJ900%2C_United_Express_AN1857502.jpg/800px-Bombardier_CRJ900%2C_United_Express_AN1857502.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/CL-600-2C10",
+    variant: "CL-600-2C10 (CRJ-700)",
+    variantInfo: "The CL-600-2C10 is Bombardier's official designation for the CRJ-700 regional jet. This variant features improved fuel efficiency and passenger comfort compared to earlier CRJ models. The '2C10' designation indicates specific engine and systems configurations. This variant is widely used by major airlines for regional operations.",
+    baseModel: "Bombardier CRJ Series",
+    firstFlight: "1999",
+    description: "Bombardier CL-600-2C10 (CRJ-700), a regional jet variant designed for short to medium-haul routes with improved fuel efficiency.",
+    length: "32.51 m (106 ft 8 in)",
+    wingspan: "23.24 m (76 ft 3 in)",
+    height: "7.57 m (24 ft 10 in)",
+    maxSpeed: "Mach 0.83 (882 km/h)",
+    range: "3,650 km (2,268 mi)",
+    capacity: "68-70 passengers"
+  },
+  "CL-600-2D24": {
+    image: "https://c.flyradius.com/images/bombardier-crj900/bombardier-cl-600-2d24.jpg",
     jetphotosUrl: "https://www.jetphotos.com/photo/keyword/CL-600-2D24",
     variant: "CL-600-2D24 (CRJ-900)",
     variantInfo: "The CL-600-2D24 is Bombardier's official designation for the CRJ-900 regional jet. This variant features the same airframe as the CRJ-900 but with specific certification and configuration details. The '2D24' designation indicates specific engine and systems configurations. This variant is widely used by major airlines for regional operations, offering mainline comfort in a smaller package.",
@@ -1399,6 +1624,51 @@ const aircraftDatabase = {
     maxSpeed: "Mach 0.82 (871 km/h)",
     range: "4,260 km (2,648 mi)",
     capacity: "98-114 passengers"
+  },
+  "ERJ 170-200 LR": {
+    image: "https://cdn.plnspttrs.net/35656/n86372-united-express-embraer-erj-175ll-erj-170-200-ll_PlanespottersNet_1794675_3097eb88f3_o.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/ERJ-170-200-LR",
+    variant: "ERJ 170-200 LR",
+    variantInfo: "The Embraer ERJ 170-200 LR (Long Range) is an extended-range variant of the ERJ 170, part of Embraer's E-Jet family. The LR designation indicates enhanced fuel capacity and improved engines, allowing it to fly longer routes than the standard ERJ 170-200. This variant is commonly used by regional airlines operating as feeders for major carriers, connecting smaller cities to major hubs.",
+    baseModel: "Embraer E-Jet Family",
+    firstFlight: "2002",
+    description: "Embraer ERJ 170-200 LR, an extended-range regional jet variant designed for longer regional routes.",
+    length: "29.9 m (98 ft 1 in)",
+    wingspan: "26.0 m (85 ft 4 in)",
+    height: "9.7 m (31 ft 10 in)",
+    maxSpeed: "Mach 0.82 (871 km/h)",
+    range: "3,889 km (2,417 mi)",
+    capacity: "70-80 passengers"
+  },
+  "A300 214": {
+    image: "https://cdn.jetphotos.com/full/6/10193_1639374731.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A300-214",
+    variant: "A300-214",
+    variantInfo: "The Airbus A300-214 is a variant of the A300 wide-body twin-engine airliner. The A300 was the first twin-engine wide-body aircraft and pioneered many technologies later used in other Airbus aircraft. The -214 variant features specific engine and configuration options, making it suitable for medium to long-haul routes. The A300's innovative design and fuel efficiency made it popular with airlines worldwide.",
+    baseModel: "Airbus A300",
+    firstFlight: "1972",
+    description: "Airbus A300-214, a wide-body twin-engine airliner. The A300 was the first twin-engine wide-body aircraft and pioneered many modern aviation technologies.",
+    length: "54.08 m (177 ft 5 in)",
+    wingspan: "44.84 m (147 ft 1 in)",
+    height: "16.53 m (54 ft 3 in)",
+    maxSpeed: "Mach 0.86 (913 km/h)",
+    range: "7,500 km (4,660 mi)",
+    capacity: "266-345 passengers"
+  },
+  "A300-214": {
+    image: "https://cdn.jetphotos.com/full/6/10193_1639374731.jpg",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/A300-214",
+    variant: "A300-214",
+    variantInfo: "The Airbus A300-214 is a variant of the A300 wide-body twin-engine airliner. The A300 was the first twin-engine wide-body aircraft and pioneered many technologies later used in other Airbus aircraft. The -214 variant features specific engine and configuration options, making it suitable for medium to long-haul routes. The A300's innovative design and fuel efficiency made it popular with airlines worldwide.",
+    baseModel: "Airbus A300",
+    firstFlight: "1972",
+    description: "Airbus A300-214, a wide-body twin-engine airliner. The A300 was the first twin-engine wide-body aircraft and pioneered many modern aviation technologies.",
+    length: "54.08 m (177 ft 5 in)",
+    wingspan: "44.84 m (147 ft 1 in)",
+    height: "16.53 m (54 ft 3 in)",
+    maxSpeed: "Mach 0.86 (913 km/h)",
+    range: "7,500 km (4,660 mi)",
+    capacity: "266-345 passengers"
   }
 };
 
@@ -1418,14 +1688,63 @@ function getAircraftData(modelName) {
   }
   
   // Try partial matches for common patterns
+  if (normalized.includes("737") && normalized.includes("7H4")) {
+    // Try hyphenated version first, then space version
+    if (aircraftDatabase["737-7H4"]) {
+      return aircraftDatabase["737-7H4"];
+    }
+    return aircraftDatabase["737 7H4"];
+  }
+  if (normalized.includes("737") && normalized.includes("823")) {
+    // Try hyphenated version first, then space version
+    if (aircraftDatabase["737-823"]) {
+      return aircraftDatabase["737-823"];
+    }
+    return aircraftDatabase["737 823"];
+  }
   if (normalized.includes("737") && (normalized.includes("800") || normalized.includes("8"))) {
     return aircraftDatabase["737-800"];
   }
   if (normalized.includes("A319")) {
     return aircraftDatabase["A319"];
   }
+  if (normalized.includes("A320") && normalized.includes("214SL")) {
+    // Try hyphenated version first, then space version
+    if (aircraftDatabase["A320-214SL"]) {
+      return aircraftDatabase["A320-214SL"];
+    }
+    return aircraftDatabase["A320 214SL"];
+  }
+  if (normalized.includes("A320") && normalized.includes("214")) {
+    // Try hyphenated version first, then space version
+    if (aircraftDatabase["A320-214"]) {
+      return aircraftDatabase["A320-214"];
+    }
+    return aircraftDatabase["A320 214"];
+  }
+  if (normalized.includes("A320") && normalized.includes("231")) {
+    // Try hyphenated version first, then space version
+    if (aircraftDatabase["A320-231"]) {
+      return aircraftDatabase["A320-231"];
+    }
+    return aircraftDatabase["A320 231"];
+  }
+  if (normalized.includes("A320") && normalized.includes("232")) {
+    // Try hyphenated version first, then space version
+    if (aircraftDatabase["A320-232"]) {
+      return aircraftDatabase["A320-232"];
+    }
+    return aircraftDatabase["A320 232"];
+  }
   if (normalized.includes("A320") && !normalized.includes("A321") && !normalized.includes("A319")) {
     return aircraftDatabase["A320"];
+  }
+  if (normalized.includes("A321") && normalized.includes("231")) {
+    // Try hyphenated version first, then space version
+    if (aircraftDatabase["A321-231"]) {
+      return aircraftDatabase["A321-231"];
+    }
+    return aircraftDatabase["A321 231"];
   }
   if (normalized.includes("A321")) {
     return aircraftDatabase["A321"];
@@ -1438,6 +1757,9 @@ function getAircraftData(modelName) {
       return aircraftDatabase["CRJ-900"];
     }
     if (normalized.includes("700") || normalized.includes("2C10")) {
+      if (aircraftDatabase["CL-600-2C10"]) {
+        return aircraftDatabase["CL-600-2C10"];
+      }
       return {
         image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bombardier_CRJ900%2C_United_Express_AN1857502.jpg/800px-Bombardier_CRJ900%2C_United_Express_AN1857502.jpg",
         jetphotosUrl: "https://www.jetphotos.com/photo/keyword/CRJ-700",
@@ -1446,15 +1768,18 @@ function getAircraftData(modelName) {
         baseModel: "Bombardier CRJ Series",
         firstFlight: "1999",
         description: "Bombardier CRJ-700, a regional jet designed for short to medium-haul routes.",
-        length: "32.5 m (106 ft 8 in)",
-        wingspan: "23.2 m (76 ft 1 in)",
-        height: "7.6 m (24 ft 11 in)",
+        length: "32.51 m (106 ft 8 in)",
+        wingspan: "23.24 m (76 ft 3 in)",
+        height: "7.57 m (24 ft 10 in)",
         maxSpeed: "Mach 0.83 (882 km/h)",
         range: "3,650 km (2,268 mi)",
-        capacity: "66-78 passengers"
+        capacity: "68-70 passengers"
       };
     }
     return aircraftDatabase["CRJ-900"]; // Default to CRJ-900 for other CRJ variants
+  }
+  if (normalized.includes("ERJ") && normalized.includes("170") && (normalized.includes("200") || normalized.includes("LR"))) {
+    return aircraftDatabase["ERJ 170-200 LR"];
   }
   if (normalized.includes("ERJ") && normalized.includes("190")) {
     return aircraftDatabase["ERJ-190"];
@@ -1467,6 +1792,16 @@ function getAircraftData(modelName) {
   }
   if (normalized.includes("A350")) {
     return aircraftDatabase["A350"];
+  }
+  if (normalized.includes("A300")) {
+    if (normalized.includes("214")) {
+      // Try hyphenated version first, then space version
+      if (aircraftDatabase["A300-214"]) {
+        return aircraftDatabase["A300-214"];
+      }
+      return aircraftDatabase["A300 214"];
+    }
+    return aircraftDatabase["A300 214"]; // Default to A300-214 for other A300 variants
   }
   
   // Estimate specifications based on model type
@@ -1561,7 +1896,7 @@ function getAircraftData(modelName) {
         height: "7.6 m (24 ft 11 in)",
         maxSpeed: "Mach 0.83 (882 km/h)",
         range: "3,650 km (2,268 mi)",
-        capacity: "66-78 passengers"
+        capacity: "68-70 passengers"
       };
     } else {
       estimatedSpecs = {
