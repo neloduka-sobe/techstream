@@ -1,5 +1,17 @@
-html, body { height: 100%; }
-body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial; color:#0e1b2b;
+html,
+body {
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: system-ui, Segoe UI, Inter, Arial;
+  color: #0e1b2b;
   background: linear-gradient(180deg, #bfe3ff 0%, #d7efff 40%, #f7fbff 100%);
 }
 
@@ -16,6 +28,7 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
+
 .hsnap-child {
   scroll-snap-align: start;
   scroll-snap-stop: always;
@@ -24,18 +37,50 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
   display: flex;
   align-items: center;
 }
-.panel { border-right: 1px solid rgba(0,0,0,0.06); }
-.wrap { max-width: 1700px; margin: 0 auto; padding: 24px; width: 100%; }
-.vcenter { text-align: center; }
-.two-col { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: center; }
-.side h2 { margin: .25rem 0; }
-.muted { color: #1e3a5f; }
-.hero h1 { font-size: clamp(2rem, 6vw, 4rem); margin: 0 0 8px; }
-.hero .lede { color: #0f172a; }
+
+.panel {
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.wrap {
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.vcenter {
+  text-align: center;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.side h2 {
+  margin: .25rem 0;
+}
+
+.muted {
+  color: #1e3a5f;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 6vw, 4rem);
+  margin: 0 0 8px;
+}
+
+.hero .lede {
+  color: #0f172a;
+}
+
 .vis-canvas {
   height: 70svh;
-  background: rgba(255,255,255,0.94);
-  border: 1px solid rgba(0,0,0,0.06);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 14px;
   padding: 8px;
   box-shadow: 0 12px 40px rgba(30, 60, 90, 0.12);
@@ -44,51 +89,79 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
 /* Bottom timeline progress */
 #timeline {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   padding: 10px 14px 14px;
   z-index: 9999;
 }
+
 .timeline-wrap {
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
   height: 52px;
 }
+
 .track {
   position: absolute;
-  left: 0; right: 0; top: 50%;
+  left: 0;
+  right: 0;
+  top: 50%;
   height: 6px;
   transform: translateY(-50%);
   background: rgba(15, 23, 42, 0.25);
   border-radius: 999px;
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.5);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
 }
-.ticks { position: absolute; left: 0; right: 0; top: 50%; height: 0; }
+
+.ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0;
+}
+
 .tick {
   position: absolute;
-  width: 10px; height: 10px;
+  width: 10px;
+  height: 10px;
   transform: translate(-50%, -50%);
   top: 50%;
   background: #0f172a;
   border: 2px solid #fff;
   border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   opacity: 0.7;
 }
-.tick.active { background: #60a5fa; opacity: 1; }
+
+.tick.active {
+  background: #60a5fa;
+  opacity: 1;
+}
 
 .labels {
-  position: absolute; left: 0; right: 0; top: calc(50% + 14px);
-  display: flex; justify-content: space-between;
-  font-size: 12px; color: #0f172a; opacity: 0.9;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + 14px);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #0f172a;
+  opacity: 0.9;
 }
+
 .plane {
   position: absolute;
   top: 50%;
   left: 0%;
   transform: translate(-50%, -77.5%);
-  width: 66px; height: 33px;           /* 1.5x larger */
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+  width: 66px;
+  height: 33px;
+  /* 1.5x larger */
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
   transition: left 350ms ease-out;
 }
 
@@ -108,9 +181,12 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
 
 /* Make the globe visualization take ~70% of the screen */
 #v1 .vis-canvas {
-  width: 100vw;      /* 70% of viewport width */
-  height: 80vh;     /* 70% of viewport height */
-  margin: 0 auto;   /* center within the wrap */
+  width: 100vw;
+  /* 70% of viewport width */
+  height: 80vh;
+  /* 70% of viewport height */
+  margin: 0 auto;
+  /* center within the wrap */
 }
 
 
@@ -126,8 +202,10 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
 }
 
 #v2 .vis-canvas {
-  width: 90vw;   /* make it wider */
-  height: 82vh;  /* make it taller */
+  width: 90vw;
+  /* make it wider */
+  height: 82vh;
+  /* make it taller */
   margin: 0 auto;
 }
 
@@ -147,8 +225,10 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
 
 /* Make the calendar visualization take most of the screen */
 #v5 .vis-canvas {
-  width: 90vw;     /* try 100vw if you want edge-to-edge */
-  height: 80vh;    /* leaves room for the bottom timeline bar */
+  width: 90vw;
+  /* try 100vw if you want edge-to-edge */
+  height: 80vh;
+  /* leaves room for the bottom timeline bar */
   margin: 0 auto;
 }
 
@@ -175,7 +255,8 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
   height: 44px;
   border-radius: 999px;
   border: none;
-  background: rgba(15, 23, 42, 0.10);       /* subtle dark bubble */
+  background: rgba(15, 23, 42, 0.10);
+  /* subtle dark bubble */
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
   color: #1f2933;
   font-size: 26px;
@@ -200,8 +281,13 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
   transform: translateY(-50%) scale(0.97);
 }
 
-.nav-arrow--left  { left: 18px; }
-.nav-arrow--right { right: 18px; }
+.nav-arrow--left {
+  left: 18px;
+}
+
+.nav-arrow--right {
+  right: 18px;
+}
 
 /* Hidden state when at ends */
 .nav-arrow--hidden {
@@ -240,7 +326,8 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
 }
 
 .transition-sources a {
-  color: #1e3a8a;            /* deep blue link */
+  color: #1e3a8a;
+  /* deep blue link */
   text-decoration: none;
   font-weight: 500;
 }
@@ -248,6 +335,7 @@ body { margin:0; overflow:hidden; font-family: system-ui, Segoe UI, Inter, Arial
 .transition-sources a:hover {
   text-decoration: underline;
 }
+
 /* Larger, consistent titles */
 .transition-title h2 {
   font-size: clamp(2rem, 4vw, 2.8rem);
