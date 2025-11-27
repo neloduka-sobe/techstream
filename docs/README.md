@@ -1,6 +1,6 @@
 # Techstream – CSC316 Project ✈️
 
-This project consists of a series of data visualizations analyzing global flight data.
+This project consists of a series of data visualizations analyzing global flight data. Namely, we show how the airline industry was severly disrupted by the COVID-19 pandemic.
 
 ## Instructions
 * Run Live Server on `index.html` to see the visualization
