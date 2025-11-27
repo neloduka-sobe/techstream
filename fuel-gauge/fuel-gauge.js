@@ -92,6 +92,7 @@ let currentView = 'gauge'; //differentiate betweent the 'gauge' or 'network' dis
 //initialization for the interactiivty for the fuel guage
 function initFuelGaugeInteractivity() {
 
+
     //remove any existing content for clutter or bugs to start fresh
     d3.select('#fuel-gauge-assembly').selectAll('*').remove();
     
@@ -100,7 +101,7 @@ function initFuelGaugeInteractivity() {
     
     //Adjust so there is a minimum size, with additional responsive ness if screen sizes dont fit.
     const svgWidth = Math.min(800, window.innerWidth - 50); 
-    const svgHeight = Math.min(600, window.innerHeight * 0.8); 
+    const svgHeight = Math.min(550, window.innerHeight * 0.8); 
     
     //wrapper that contains the space for the visualization and the subitite, will make it easier to transfer once code with others is merged
     wrapperDiv = container.append('div')
@@ -129,7 +130,7 @@ function initFuelGaugeInteractivity() {
         .style('color', '#000000b3')
         .style('font-size', '20px')
         .style('font-weight', '400')
-        .style('margin', '20px 20px 10px 20px') //margin on all side to be safe can change if not needed
+        .style('margin', '15px 20px 5px 20px') //margin on all side to be safe can change if not needed
         .text('Hover parts of the visualization for more info');
 
     wrapperDiv.append('p')
@@ -138,7 +139,7 @@ function initFuelGaugeInteractivity() {
         .style('color', '#000000b3')
         .style('font-size', '20px')
         .style('font-weight', '400')
-        .style('margin', '20px 20px 20px 20px') //margin on all side to be safe can change if not needed
+        .style('margin', '0px 20px 20px 20px') //margin on all side to be safe can change if not needed
         .text('Or click any segments for more details.');
     
     /* actual creation for main fuel guage viz */
