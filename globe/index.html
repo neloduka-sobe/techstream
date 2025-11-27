@@ -70,11 +70,11 @@
     padding: 4px 6px;
   }
   #prefixDropdown {
-    top: 680px;
+    top: 682px;
     transform: translateX(-50%);
   }
   #countryDropdown {
-    top: 735px;
+    top: 737px;
     transform: translateX(-50%);
   }
 
@@ -100,7 +100,7 @@
     width: 200px;
     text-align: center;
     padding-left: 0;
-    top: 710px;
+    top: 712px;
   }
 
   #autorotateButton, #playPauseButton {
@@ -185,7 +185,7 @@
 <button id="jumpToAsia">Asia</button>
 <button id="jumpToMiddleEast">Middle East</button>
 <button id="jumpToSouthAmerica">South America</button>
-<button id="jumpToAustralia">Australia</button>
+<button id="jumpToAustralia" style="display:none">Australia</button>
 
 <div id="infoBox">Click a plane or airport to see details</div>
 <div id="single-view-container">
@@ -218,7 +218,7 @@
 <button id="autorotateButton">Turn Autorotate On</button>
 <button id="playPauseButton">Play Timeline</button>
 <div id="globeCoordinatesLabel" style="position: absolute; top: 840px; left: 50%; transform: translateX(-50%); font-family: sans-serif; font-size: 13px; padding: 4px 6px; display: none;"></div>
-<div id="xxx"></div>
+<div id="xxx" style="display: none"></div>
 <div id="yyy"></div>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -245,8 +245,8 @@
 
   // New story screens for the extended part
   const extendedStoryScreens = [
-    { text: "Now, let's focus on Freight.", duration: 3000 },
-    { text: "Here are flights flown by Fedex", duration: 3000}, // Mark this screen for the chart
+    { text: "Now, let's turn to Europe.", duration: 3000 },
+    { text: "Here are flights flown by Airlines from the UK", duration: 3000}, // Mark this screen for the chart
   ];
   let currentExtendedStoryScreen = 0;
   let canadaFlightsDailyData = null; // To store the calculated data
@@ -572,8 +572,14 @@
           // All extended story screens finished
           d3.select("#storyOverlay").style("display", "none");
           d3.select("#legend").style("display", "block");
-          prefixDropdown.property("value", "FDX"); // Select Fedex
-          prefixDropdown.dispatch("change"); // Trigger change event
+          //prefixDropdown.property("value", "FDX"); // Select Fedex
+          //prefixDropdown.dispatch("change"); // Trigger change event
+          countryDropdown.property("value", "UNITED KINGDOM");
+          countryDropdown.dispatch("change"); // Trigger change event
+          d3.select("#jumpToEurope").dispatch("click");
+          d3.select("#zoomInButton").dispatch("click");
+          d3.select("#zoomInButton").dispatch("click");
+
           // reset timeline to 00:00
           handle.attr("cx", xScale(0));
           updateAllGlobes(0);
@@ -585,14 +591,45 @@
             if (minutes >= 1380) { // 11:00 PM is 1380 minutes
               clearInterval(waitForTimelineAt2300Again);
               playPauseBtn.dispatch("click"); // Pause the timeline
+              
+              d3.select("head")
+              .append("style")
+              .html(`
+                @keyframes pulse {
+                  0%   { transform: translateX(-50%) scale(1); }
+                  50%  { transform: translateX(-50%) scale(1.1); }
+                  100% { transform: translateX(-50%) scale(1); }
+                }
+                #continueStoryButton {
+                  animation: pulse 1.5s infinite ease-in-out;
+                }
+              `);
 
+              d3.select("body").append("button")
+                .attr("id", "continueStoryButton")
+                .style("position", "absolute")
+                .style("top", "740px")
+                .style("left", "50%")
+                .style("transform", "translateX(-50%)")
+                .style("padding", "10px 20px")
+                .style("font-size", "16px")
+                .style("cursor", "pointer")
+                .text("Continue Story");
+
+
+          //d3.select("#continueStoryButton").style("display", "inline-block");
+          // Attach event listener
+          d3.select("#continueStoryButton").on("click", () => {
               // Show dropdowns and labels
+              d3.select("#continueStoryButton").remove(); // Remove the button
               d3.select("#prefixDropdown").style("display", "block");
               d3.select("#countryDropdown").style("display", "block");
               d3.select("#prefixLabel").style("display", "block");
               d3.select("#countryLabel").style("display", "block");
+           });
 
-              alert("Explore more by interacting with the globe and filters!");
+              
+              //alert("Explore more by interacting with the globe and filters!");
             }
           }, 500); // Check every half second
 
@@ -1675,8 +1712,8 @@
 
   function showAirportInfo(ap, datasetKey) {
     activeFlight = null;
-    activePrefixHighlight = null;
-    activeCountryHighlight = null;
+    //activePrefixHighlight = null;
+   // activeCountryHighlight = null;
     activeAircraftHighlight = null;
     activeAirport = ap;
     
