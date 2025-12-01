@@ -125,19 +125,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const { deltaX, deltaY } = e;
 
-      // 2) Only treat this as paging if it's primarily horizontal
-      if (Math.abs(deltaX) <= Math.abs(deltaY)) {
-        // vertical-ish scrolling → ignore for paging
-        return;
-      }
-
       if (lock) return;
       lock = true;
 
-      if (deltaX > 0) {
-        snapTo(App.index + 1);
-      } else if (deltaX < 0) {
-        snapTo(App.index - 1);
+      // 2) Support both horizontal AND vertical scrolling for navigation
+      // Horizontal scroll takes priority if both are present
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Primarily horizontal scrolling
+        if (deltaX > 0) {
+          snapTo(App.index + 1);
+        } else if (deltaX < 0) {
+          snapTo(App.index - 1);
+        }
+      } else {
+        // Primarily vertical scrolling (mouse wheel up/down)
+        if (deltaY > 0) {
+          snapTo(App.index + 1); // scroll down = next section
+        } else if (deltaY < 0) {
+          snapTo(App.index - 1); // scroll up = previous section
+        }
       }
 
       setTimeout(() => (lock = false), PAGE_DELAY);
