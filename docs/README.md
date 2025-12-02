@@ -45,7 +45,7 @@ To run this project locally:
 
 OR
 
-Simply use the diployed link: https://neloduka-sobe.github.io/techstream/
+Simply use the deployed link: https://neloduka-sobe.github.io/techstream/
 
 ## Credits & Data Sources
 
