@@ -1676,6 +1676,33 @@
         .style("font-size", "12px")
         .style("margin-left", "5px")
         .text(d => faaLookup[d] ? faaLookup[d].Company : d);
+
+    // Add Airport Legend Item
+    const airportLegendItem = legendContainer.append("div")
+        .attr("class", "legend-item")
+        .style("display", "inline-flex")
+        .style("align-items", "center")
+        .style("margin-right", "15px")
+        .style("margin-bottom", "5px")
+        .style("border-left", "1px solid #cbd5e1")
+        .style("padding-left", "15px");
+
+    airportLegendItem.append("svg")
+        .attr("width", 12)
+        .attr("height", 12)
+        .style("flex-shrink", "0")
+        .append("rect")
+        .attr("width", 8)
+        .attr("height", 8)
+        .attr("x", 2)
+        .attr("y", 2)
+        .style("fill", "blue")
+        .style("opacity", 0.5);
+
+    airportLegendItem.append("span")
+        .style("font-size", "12px")
+        .style("margin-left", "5px")
+        .text("Major Airport");
   }
 
   function animateCountry(countryName) {
