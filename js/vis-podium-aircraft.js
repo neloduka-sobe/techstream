@@ -1,6 +1,36 @@
 // js/vis-podium-aircraft.js
 // Y-axis removed - no numbers on y-axis
 
+// Normalize model names helper function (shared)
+// Merges variations like "737-800", "737 800", "737800", "BOEING 737-8AS" into a single normalized form
+function normalizeModelName(modelName) {
+  if (!modelName) return "";
+  
+  let normalized = modelName.trim().toUpperCase();
+  
+  // Remove common manufacturer prefixes (case-insensitive)
+  // Handle various patterns: "BOEING ", "BOEING-", "BOEING737", "BOEING 737", etc.
+  // Match manufacturer name followed by optional spaces/dashes or directly by model number
+  normalized = normalized.replace(/^(BOEING|AIRBUS|BOMBARDIER|EMBRAER|MCDONNELL|MCDONNELL DOUGLAS|LOCKHEED|CESSNA|GULFSTREAM|DASSAULT|SAAB|ATR|ANTONOV|ILYUSHIN|TUPOLEV|SUKHOI)[\s\-]+/i, "");
+  
+  // Also handle cases where manufacturer is directly attached (no space): "BOEING737" -> "737"
+  normalized = normalized.replace(/^(BOEING|AIRBUS|BOMBARDIER|EMBRAER|MCDONNELL|LOCKHEED|CESSNA|GULFSTREAM|DASSAULT|SAAB|ATR|ANTONOV|ILYUSHIN|TUPOLEV|SUKHOI)([0-9A-Z])/i, "$2");
+  
+  // Remove manufacturer if it appears anywhere else in the string (less common but possible)
+  normalized = normalized.replace(/\b(BOEING|AIRBUS|BOMBARDIER|EMBRAER|MCDONNELL|LOCKHEED|CESSNA|GULFSTREAM|DASSAULT|SAAB|ATR|ANTONOV|ILYUSHIN|TUPOLEV|SUKHOI)\b[\s\-]*/gi, "");
+  
+  // Replace all whitespace (spaces, tabs, etc.) with dashes
+  normalized = normalized.replace(/\s+/g, "-");
+  
+  // Normalize multiple dashes to single dash
+  normalized = normalized.replace(/-+/g, "-");
+  
+  // Remove leading/trailing dashes
+  normalized = normalized.replace(/^-+|-+$/g, "");
+  
+  return normalized;
+}
+
 async function renderPodium(selector, data) {
   const container = d3.select(selector);
   container.selectAll("*").remove();
@@ -37,7 +67,7 @@ async function renderPodium(selector, data) {
     const aircraftData = await d3.csv("globe/aircraft.csv");
     const aircraftLookup = new Map();
     const modelInfoLookup = new Map(); // Lookup by model name for plane cards
-    
+
     aircraftData.forEach(d => {
       if (d.icao24 && d.model) {
         aircraftLookup.set(d.icao24.toUpperCase(), {
@@ -46,11 +76,12 @@ async function renderPodium(selector, data) {
           typecode: d.typecode || ""
         });
         
-        // Store model info (use first occurrence or merge info)
+        // Store model info using normalized name as key
         const modelName = d.model.trim();
-        if (modelName && !modelInfoLookup.has(modelName)) {
-          modelInfoLookup.set(modelName, {
-            model: modelName,
+        const normalizedName = normalizeModelName(modelName);
+        if (normalizedName && !modelInfoLookup.has(normalizedName)) {
+          modelInfoLookup.set(normalizedName, {
+            model: modelName,  // Keep original for display
             manufacturer: d.manufacturername || "Unknown",
             typecode: d.typecode || "",
             operator: d.operator || "",
@@ -99,7 +130,14 @@ async function renderPodium(selector, data) {
       }
     }
 
-    // Count aircraft models per period
+    // Normalize model names to merge variations (e.g., "737-800" vs "737 800" vs "737800")
+    // Using the shared normalizeModelName function defined at the top of the file
+
+    // Map normalized names to original names (keep the most common original)
+    const normalizedToOriginal = new Map();
+    const originalCounts = {};
+
+    // Count aircraft models per period with normalization
     const modelCounts = {};
     
     for (const [period, flights] of Object.entries(allFlights)) {
@@ -108,22 +146,49 @@ async function renderPodium(selector, data) {
         const icao24 = (f.icao24 || "").toUpperCase();
         const aircraft = aircraftLookup.get(icao24);
         if (aircraft && aircraft.model) {
-          const model = aircraft.model.trim();
-          if (model) {
-            counts[model] = (counts[model] || 0) + 1;
+          const originalModel = aircraft.model.trim();
+          if (originalModel) {
+            const normalizedModel = normalizeModelName(originalModel);
+            
+            // Track original model names
+            if (!originalCounts[normalizedModel]) {
+              originalCounts[normalizedModel] = {};
+            }
+            originalCounts[normalizedModel][originalModel] = 
+              (originalCounts[normalizedModel][originalModel] || 0) + 1;
+            
+            // Count using normalized name
+            counts[normalizedModel] = (counts[normalizedModel] || 0) + 1;
           }
         }
       });
       modelCounts[period] = counts;
     }
 
-    // Get top models across all periods
+    // Determine the most common original name for each normalized model
+    // Normalize display names to remove manufacturer prefixes
+    Object.keys(originalCounts).forEach(normalized => {
+      const originals = originalCounts[normalized];
+      const originalKeys = Object.keys(originals);
+      
+      // Find the most common original name
+      const mostCommon = originalKeys.reduce((a, b) => 
+        originals[a] > originals[b] ? a : b
+      );
+      
+      // Normalize the display name to remove manufacturer prefixes
+      // This ensures "BOEING 737-8AS" becomes "737-8AS" for display
+      const displayName = normalizeModelName(mostCommon);
+      normalizedToOriginal.set(normalized, displayName);
+    });
+
+    // Get top models across all periods (using normalized names)
     const allModels = new Set();
     Object.values(modelCounts).forEach(counts => {
       Object.keys(counts).forEach(model => allModels.add(model));
     });
 
-    // Calculate total counts and get top 10 models
+    // Calculate total counts and get top 10 models (using normalized names)
     const modelTotals = {};
     allModels.forEach(model => {
       modelTotals[model] = Object.values(modelCounts)
@@ -135,22 +200,27 @@ async function renderPodium(selector, data) {
       .slice(0, 10);
 
     // Prepare data for grouped bar chart
-    const chartData = topModels.map(model => ({
-      model: model,
-      jan: modelCounts.jan?.[model] || 0,
-      apr: modelCounts.apr?.[model] || 0,
-      dec: modelCounts.dec?.[model] || 0,
-      total: modelTotals[model],
-      // Calculate trends
-      trend: {
-        preToPeak: modelCounts.jan?.[model] || 0 > 0 
-          ? ((modelCounts.apr?.[model] || 0) - (modelCounts.jan?.[model] || 0)) / (modelCounts.jan?.[model] || 1) * 100
-          : 0,
-        peakToPost: modelCounts.apr?.[model] || 0 > 0
-          ? ((modelCounts.dec?.[model] || 0) - (modelCounts.apr?.[model] || 0)) / (modelCounts.apr?.[model] || 1) * 100
-          : 0
-      }
-    }));
+    // Use the most common original name for display, but normalized name for counting
+    const chartData = topModels.map(normalizedModel => {
+      const displayModel = normalizedToOriginal.get(normalizedModel) || normalizedModel;
+      return {
+        model: displayModel,  // Display the most common original name
+        normalizedModel: normalizedModel,  // Keep normalized for internal use
+        jan: modelCounts.jan?.[normalizedModel] || 0,
+        apr: modelCounts.apr?.[normalizedModel] || 0,
+        dec: modelCounts.dec?.[normalizedModel] || 0,
+        total: modelTotals[normalizedModel],
+        // Calculate trends
+        trend: {
+          preToPeak: modelCounts.jan?.[normalizedModel] || 0 > 0 
+            ? ((modelCounts.apr?.[normalizedModel] || 0) - (modelCounts.jan?.[normalizedModel] || 0)) / (modelCounts.jan?.[normalizedModel] || 1) * 100
+            : 0,
+          peakToPost: modelCounts.apr?.[normalizedModel] || 0 > 0
+            ? ((modelCounts.dec?.[normalizedModel] || 0) - (modelCounts.apr?.[normalizedModel] || 0)) / (modelCounts.apr?.[normalizedModel] || 1) * 100
+            : 0
+        }
+      };
+    });
 
     clearInterval(loadingInterval);
     svg.selectAll("*").remove();
@@ -1101,7 +1171,7 @@ function getAircraftImageUrl(modelName, variant = "") {
 // Aircraft database with photos from JetPhotos, descriptions, variant info, and physical specs
 const aircraftDatabase = {
   "737-800": {
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
+    image: "https://brix.afklcargo.com/otf/images/media/97085C1E-0CF3-49C2-B22461DE22C4C9C6",
     jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-800",
     variant: "737-800",
     variantInfo: "The Boeing 737-800 is the best-selling variant of the 737 Next Generation family. Introduced in 1998, it features improved fuel efficiency, extended range, and increased passenger capacity compared to earlier 737 models. This variant became the backbone of many airlines' fleets due to its reliability and operational flexibility.",
@@ -1183,6 +1253,21 @@ const aircraftDatabase = {
     baseModel: "Boeing 737 Next Generation",
     firstFlight: "1997",
     description: "Boeing 737-800 variant specifically configured for United Airlines, featuring airline-specific cabin layouts and service configurations.",
+    length: "39.5 m (129 ft 7 in)",
+    wingspan: "35.8 m (117 ft 5 in)",
+    height: "12.5 m (41 ft 2 in)",
+    maxSpeed: "Mach 0.82 (876 km/h)",
+    range: "5,765 km (3,582 mi)",
+    capacity: "162-189 passengers"
+  },
+  "737-8AS": {
+    image: "https://www.baaa-acro.com/sites/default/files/styles/crash_detail_page_image_style_1000x505_/public/import/uploads/2008/11/EI-DYG.jpg?itok=397KrmWz",
+    jetphotosUrl: "https://www.jetphotos.com/photo/keyword/737-8AS",
+    variant: "737-8AS",
+    variantInfo: "The Boeing 737-8AS is a variant of the 737-800 family. The '8AS' designation indicates specific airline configuration and engine options. This variant features airline-specific cabin layouts, seating arrangements, and service configurations optimized for specific route requirements.",
+    baseModel: "Boeing 737 Next Generation",
+    firstFlight: "1997",
+    description: "Boeing 737-8AS, a variant of the 737-800 family with airline-specific configuration. Features improved fuel efficiency and operational flexibility.",
     length: "39.5 m (129 ft 7 in)",
     wingspan: "35.8 m (117 ft 5 in)",
     height: "12.5 m (41 ft 2 in)",
@@ -1702,6 +1787,12 @@ function getAircraftData(modelName) {
     }
     return aircraftDatabase["737 823"];
   }
+  if (normalized.includes("737") && normalized.includes("8AS")) {
+    // Try hyphenated version first
+    if (aircraftDatabase["737-8AS"]) {
+      return aircraftDatabase["737-8AS"];
+    }
+  }
   if (normalized.includes("737") && (normalized.includes("800") || normalized.includes("8"))) {
     return aircraftDatabase["737-800"];
   }
@@ -1935,6 +2026,86 @@ function getAircraftData(modelName) {
       range: "3,704 km (2,302 mi)",
       capacity: "76-88 passengers"
     };
+  } else if (modelUpper.includes("737")) {
+    // Generic 737 variants
+    estimatedSpecs = {
+      length: "39.5 m (129 ft 7 in)",
+      wingspan: "35.8 m (117 ft 5 in)",
+      height: "12.5 m (41 ft 2 in)",
+      maxSpeed: "Mach 0.82 (876 km/h)",
+      range: "5,765 km (3,582 mi)",
+      capacity: "162-189 passengers"
+    };
+  } else if (modelUpper.includes("A320") || modelUpper.includes("A321")) {
+    // Generic A320/A321 variants
+    estimatedSpecs = {
+      length: modelUpper.includes("A321") ? "44.51 m (146 ft 0 in)" : "37.57 m (123 ft 3 in)",
+      wingspan: "34.10 m (111 ft 10 in)",
+      height: "11.76 m (38 ft 7 in)",
+      maxSpeed: "Mach 0.82 (871 km/h)",
+      range: modelUpper.includes("A321") ? "5,950 km (3,698 mi)" : "6,150 km (3,822 mi)",
+      capacity: modelUpper.includes("A321") ? "185-236 passengers" : "150-180 passengers"
+    };
+  } else if (modelUpper.includes("A319")) {
+    // Generic A319 variants
+    estimatedSpecs = {
+      length: "33.84 m (111 ft 0 in)",
+      wingspan: "34.10 m (111 ft 10 in)",
+      height: "11.76 m (38 ft 7 in)",
+      maxSpeed: "Mach 0.82 (871 km/h)",
+      range: "6,850 km (4,257 mi)",
+      capacity: "124-156 passengers"
+    };
+  } else if (modelUpper.includes("A330")) {
+    // Generic A330 variants
+    estimatedSpecs = {
+      length: "58.82 m (193 ft 0 in)",
+      wingspan: "60.3 m (197 ft 10 in)",
+      height: "17.39 m (57 ft 1 in)",
+      maxSpeed: "Mach 0.86 (913 km/h)",
+      range: "13,450 km (8,355 mi)",
+      capacity: "250-440 passengers"
+    };
+  } else if (modelUpper.includes("787")) {
+    // Generic 787 variants
+    estimatedSpecs = {
+      length: "57 m (186 ft 11 in)",
+      wingspan: "60.12 m (197 ft 3 in)",
+      height: "16.92 m (55 ft 6 in)",
+      maxSpeed: "Mach 0.85 (903 km/h)",
+      range: "13,620 km (8,465 mi)",
+      capacity: "242 passengers"
+    };
+  } else if (modelUpper.includes("777")) {
+    // Generic 777 variants
+    estimatedSpecs = {
+      length: "73.9 m (242 ft 4 in)",
+      wingspan: "64.8 m (212 ft 7 in)",
+      height: "18.5 m (60 ft 8 in)",
+      maxSpeed: "Mach 0.84 (893 km/h)",
+      range: "14,685 km (9,125 mi)",
+      capacity: "365-550 passengers"
+    };
+  } else if (modelUpper.includes("CRJ") || modelUpper.includes("CL-600")) {
+    // Generic CRJ variants
+    estimatedSpecs = {
+      length: "36.4 m (119 ft 5 in)",
+      wingspan: "24.85 m (81 ft 6 in)",
+      height: "7.51 m (24 ft 8 in)",
+      maxSpeed: "Mach 0.83 (882 km/h)",
+      range: "3,417 km (2,123 mi)",
+      capacity: "76-90 passengers"
+    };
+  } else if (modelUpper.includes("A300") || modelUpper.includes("A310")) {
+    // Generic A300/A310 variants
+    estimatedSpecs = {
+      length: "54.08 m (177 ft 5 in)",
+      wingspan: "44.84 m (147 ft 1 in)",
+      height: "16.53 m (54 ft 3 in)",
+      maxSpeed: "Mach 0.86 (913 km/h)",
+      range: "7,500 km (4,660 mi)",
+      capacity: "266-345 passengers"
+    };
   } else {
     // Generic estimates for unknown commercial aircraft
     estimatedSpecs = {
@@ -1947,14 +2118,61 @@ function getAircraftData(modelName) {
     };
   }
   
+  // Generate appropriate description and variantInfo based on aircraft type
+  let description = "A commercial airliner serving routes worldwide. Specifications vary by model variant.";
+  let variantInfo = "A commercial airliner serving routes worldwide. Variant specifications and configurations may vary by airline and operational requirements.";
+  let baseModel = "Commercial Airliner";
+  
+  if (modelUpper.includes("737")) {
+    baseModel = "Boeing 737 Next Generation";
+    description = `Boeing ${modelName}, a variant of the 737 Next Generation family. Known for its reliability and fuel efficiency, it's a workhorse of short to medium-haul routes.`;
+    variantInfo = `The Boeing ${modelName} is a variant of the 737 Next Generation family. This variant features improved fuel efficiency, extended range, and increased passenger capacity compared to earlier 737 models. The specific designation indicates airline-specific configurations and engine options optimized for various operational requirements.`;
+  } else if (modelUpper.includes("A320")) {
+    baseModel = "Airbus A320 Family";
+    description = `Airbus ${modelName}, a variant of the A320 family. Features advanced fly-by-wire technology and fuel efficiency, making it a direct competitor to the Boeing 737.`;
+    variantInfo = `The Airbus ${modelName} is a variant of the A320 family, which revolutionized single-aisle aircraft with its fly-by-wire technology. This variant maintains the A320's advanced flight control systems, spacious cabin, and fuel efficiency while offering specific performance characteristics suited to different route profiles.`;
+  } else if (modelUpper.includes("A321")) {
+    baseModel = "Airbus A320 Family";
+    description = `Airbus ${modelName}, a variant of the A321 family. The largest member of the A320 family, offering increased capacity while maintaining efficiency.`;
+    variantInfo = `The Airbus ${modelName} is a variant of the A321 family, which is the stretched variant of the A320 family. This variant offers the highest passenger capacity while maintaining the same cockpit and systems. Its extended fuselage allows airlines to serve high-density routes efficiently.`;
+  } else if (modelUpper.includes("A319")) {
+    baseModel = "Airbus A320 Family";
+    description = `Airbus ${modelName}, a variant of the A319 family. The smallest member of the A320 family, ideal for regional routes and shorter runways.`;
+    variantInfo = `The Airbus ${modelName} is a variant of the A319 family, which is the smallest member of the A320 family. Designed for shorter routes and smaller airports, its compact size allows it to operate from runways as short as 1,800 meters, making it ideal for regional routes and challenging airports.`;
+  } else if (modelUpper.includes("A330")) {
+    baseModel = "Airbus A330 Family";
+    description = `Airbus ${modelName}, a variant of the A330 family. A wide-body twin-engine airliner known for its long-range capabilities and fuel efficiency.`;
+    variantInfo = `The Airbus ${modelName} is a variant of the A330 family, which has become one of the most successful wide-body aircraft in history. It offers exceptional range and fuel efficiency for both medium and long-haul routes, making it a workhorse for international operations.`;
+  } else if (modelUpper.includes("787")) {
+    baseModel = "Boeing 787 Dreamliner";
+    description = `Boeing ${modelName}, a variant of the 787 Dreamliner family. A revolutionary wide-body aircraft made primarily of composite materials with exceptional fuel efficiency.`;
+    variantInfo = `The Boeing ${modelName} is a variant of the 787 Dreamliner family, which revolutionized long-haul travel with its composite construction and advanced systems. Over 50% of the aircraft is made from composite materials, reducing weight and improving fuel efficiency by up to 20% compared to similar-sized aircraft.`;
+  } else if (modelUpper.includes("777")) {
+    baseModel = "Boeing 777";
+    description = `Boeing ${modelName}, a variant of the 777 family. One of the world's most successful wide-body aircraft, known for its reliability and long-range capabilities.`;
+    variantInfo = `The Boeing ${modelName} is a variant of the 777 family, one of the most successful wide-body aircraft ever built. This variant features exceptional reliability and range, making it the preferred choice for many airlines' longest routes.`;
+  } else if (modelUpper.includes("CRJ") || modelUpper.includes("CL-600")) {
+    baseModel = "Bombardier CRJ Series";
+    description = `Bombardier ${modelName}, a regional jet variant designed for short to medium-haul routes. Features improved fuel efficiency and passenger comfort.`;
+    variantInfo = `The Bombardier ${modelName} is a variant of the CRJ (Canadair Regional Jet) family. This regional jet bridges the gap between smaller regional aircraft and mainline narrow-body jets, offering mainline-style amenities in a regional aircraft.`;
+  } else if (modelUpper.includes("ERJ")) {
+    baseModel = "Embraer E-Jet Family";
+    description = `Embraer ${modelName}, a modern regional jet offering mainline comfort in a smaller aircraft. Popular for connecting smaller cities to major hubs.`;
+    variantInfo = `The Embraer ${modelName} is part of Embraer's E-Jet family, designed to compete directly with smaller narrow-body aircraft. Unlike traditional regional jets, it features a wider cabin with a 2+2 seating configuration, providing mainline comfort in a smaller aircraft.`;
+  } else if (modelUpper.includes("A300") || modelUpper.includes("A310")) {
+    baseModel = "Airbus A300";
+    description = `Airbus ${modelName}, a wide-body twin-engine airliner. The A300 was the first twin-engine wide-body aircraft and pioneered many modern aviation technologies.`;
+    variantInfo = `The Airbus ${modelName} is a variant of the A300 family, which was the first twin-engine wide-body aircraft and pioneered many technologies later used in other Airbus aircraft. Its innovative design and fuel efficiency made it popular with airlines worldwide.`;
+  }
+  
   return {
     image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg/800px-Boeing_737-800_%28B738%29%2C_Southwest_Airlines_%28N8609F%29_AN1922509.jpg",
     jetphotosUrl: `https://www.jetphotos.com/photo/keyword/${encodeURIComponent(modelName)}`,
     variant: modelName,
-    variantInfo: "A commercial airliner serving routes worldwide. Variant specifications and configurations may vary by airline and operational requirements.",
-    baseModel: "Commercial Airliner",
+    variantInfo: variantInfo,
+    baseModel: baseModel,
     firstFlight: "",
-    description: "A commercial airliner serving routes worldwide. Specifications vary by model variant.",
+    description: description,
     ...estimatedSpecs
   };
 }
