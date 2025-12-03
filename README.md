@@ -2,6 +2,11 @@
 
 **TechStream** is an interactive data visualization project that explores how the COVID-19 pandemic reshaped global aviation. Through a series of side-scrollling panels with storytelling and visualizations, it visually communicates the impact on the industry through analysis of the before, during and after effects of the COVID-19 pandemic. Visualizing the uneven recovery across different regions, permanent changes to fleets and routes, and the idea of what global aviation looks like for different countries through many metrics.
 
+## Video and Process Book links
+
+* **[Process book](https://docs.google.com/document/d/1LfCu1Di3CxLBlXKwkXHrE_RhM_urP86IgMJZO8o6zVU/edit?usp=sharing)**
+* **[Video Link]()**
+
 ## Project Overview
 
 This project uses **D3.js** to create dynamic, data-driven visualizations that respond to user interaction. The narrative covers:
