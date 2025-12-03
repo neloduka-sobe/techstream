@@ -8,6 +8,7 @@
      * Process book also included as physical copy in `docs/` sub directory.
 * **[Video Link](https://youtu.be/uBenjUY4YJI)**
      * Video link to youtube video for 2 minute walkthrough
+* **Deployed Link:** https://neloduka-sobe.github.io/techstream/
 
 ## Project Overview
 
