@@ -2,6 +2,70 @@
 <html lang="en">
 <meta charset="utf-8">
 <style>
+  /* --- Base & Typography --- */
+  body {
+    font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+    color: #0e1b2b;
+    background-color: #f8fafc;
+    margin: 0;
+  }
+
+  /* --- UI Components (Polished) --- */
+  button {
+    appearance: none;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: #334155;
+    cursor: pointer;
+    font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+    transition: all 0.15s ease-in-out;
+  }
+
+  button:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+  }
+
+  button:active {
+    background-color: #e2e8f0;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  select {
+    appearance: none;
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: #334155;
+    cursor: pointer;
+    font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+    font-size: 13px;
+    padding: 6px 2.5rem 6px 12px;
+    transition: border-color 0.15s ease-in-out;
+  }
+
+  select:hover {
+    border-color: #94a3b8;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* --- Layout & Maps --- */
   #map, .multi-map {
     width: 960px;
     margin: 0 auto;
@@ -16,63 +80,77 @@
   }
 
   .multi-map {
-    width: 30%; /* Roughly one-third of the width */
-    /* height: 500px; /* Adjust height for multi-view */
+    width: 30%; 
     margin: 0;
   }
 
+  /* --- Info Box --- */
   #infoBox {
     position: absolute;
     top: 20px;
     right: 30px;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-family: sans-serif;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 16px;
+    font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
     font-size: 13px;
-    line-height: 1.4;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    line-height: 1.5;
+    color: #334155;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     max-width: 300px;
-    z-index: 100; /* Ensure it's above maps */
+    z-index: 100; 
   }
 
+  #infoBox h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+  }
+
+  #infoBox b {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  /* --- Controls --- */
   #timeline {
     position: absolute;
     top: 600px;
     left: 50%;
     transform: translateX(-50%);
   }
+
   #multiviewButton {
     position: absolute;
     top: 780px;
     left: 50%;
     transform: translateX(-50%);
-    font-family: sans-serif;
-    font-size: 13px;
-    padding: 4px 6px;
-    cursor: pointer;
-    display: none;
+    display: none; /* Maintained from original */
   }
+
   #dateDropdown {
     position: absolute;
     top: 630px;
     left: 50%;
     transform: translateX(-50%);
-    font-family: sans-serif;
-    font-size: 13px;
-    padding: 4px 6px;
   }
+
   #prefixDropdown, #countryDropdown {
     position: absolute;
     left: 50%;
-    font-family: sans-serif;
-    font-size: 13px;
-    padding: 4px 6px;
   }
+
   #prefixDropdown {
     top: 682px;
     transform: translateX(-50%);
   }
+
   #countryDropdown {
     top: 737px;
     transform: translateX(-50%);
@@ -80,10 +158,13 @@
 
   .filter-label {
     position: absolute;
-    font-family: sans-serif;
-    font-size: 12px;
-    color: #555;
-    top: 658px; /* Position above the dropdowns */
+    font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    top: 658px;
   }
 
   #prefixLabel {
@@ -108,12 +189,7 @@
     top: 700px;
     left: 50%;
     transform: translateX(-50%);
-    font-family: sans-serif;
-    font-size: 13px;
-    padding: 4px 6px;
-    cursor: pointer;
-    margin-top: 0px;
-    display: none;
+    display: none; /* Maintained from original */
   }
 
   #playPauseButton {
@@ -131,6 +207,42 @@
     top: 820px;
   }
 
+  /* --- Charts --- */
+  .chart-title {
+      font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+      font-weight: 600;
+      fill: #334155;
+  }
+  
+  .label {
+      font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+      fill: #475569;
+  }
+  
+  .count-label {
+      font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+      font-weight: 500;
+      fill: #64748b;
+  }
+
+  /* --- Legend --- */
+  #legend {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 30px;
+    padding: 10px 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    width: auto !important; /* Polish: Auto width centered */
+    min-width: 400px;
+    max-width: 90%;
+  }
+  
+  #legend div {
+      font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+  }
+
+  /* --- Animations --- */
   .flightPath {
     pointer-events: none;
   }
