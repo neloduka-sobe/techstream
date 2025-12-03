@@ -5,6 +5,7 @@
 ## Video and Process Book links
 
 * **[Process book](https://docs.google.com/document/d/1LfCu1Di3CxLBlXKwkXHrE_RhM_urP86IgMJZO8o6zVU/edit?usp=sharing)**
+     * Process book also included as physical copy in `docs/` sub directory.
 * **[Video Link]()**
 
 ## Project Overview
